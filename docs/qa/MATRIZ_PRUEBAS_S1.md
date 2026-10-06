@@ -7,6 +7,7 @@
 
 | ID | Historia | Prioridad | Precondición / dependencia | Datos ficticios | Pasos resumidos | Resultado esperado | Resultado real | Evidencia | Estado | Defecto |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| S1-DATA-01 | Revisión documental de datos | Alta | PR #6 accesible | No aplica | Comparar diccionario, contrato, ERD y guía de persistencia de Diana | Los nombres, tipos y reglas propuestos son consistentes; pendientes y límites de la propuesta están identificados | Revisión ejecutada: los 10 campos, ejemplos y semántica de opcionales son consistentes entre documentos. UUID, propiedad del expediente, app/ruta, versiones, migración, comandos y aprobación siguen pendientes | [PR #6](https://github.com/jilderdionisio-cloud/GestNutri/pull/6), commit `81f2b36` | PASS | No aplica: es revisión documental, no validación de implementación |
 | S1-HU01-01 | HU-01 Inicio de sesión | Crítica | Contrato de autenticación, usuario ficticio y entorno disponibles | `QA-USR-VALIDO` | Enviar credenciales válidas | Se concede acceso según contrato; no se exponen datos sensibles | Pendiente | Pendiente | BLOCKED | — |
 | S1-HU01-02 | HU-01 Inicio de sesión | Alta | Endpoint/UI de login disponibles | `QA-USR-INVALIDO` | Enviar credenciales inválidas | Se rechaza con el error/código definido; sin filtrar información sensible | Pendiente | Pendiente | BLOCKED | — |
 | S1-HU01-03 | HU-01 Inicio de sesión | Alta | UI y contrato disponibles | Sin credenciales | Intentar enviar campos vacíos | Se muestran las validaciones definidas y no se inicia sesión | Pendiente | Pendiente | BLOCKED | — |
@@ -32,8 +33,9 @@
 
 ## Bloqueadores actuales
 
-1. Los Issues #2, #3 y #4 continúan abiertos: no hay contrato de datos, contrato de API, migración, implementación ni entorno de prueba en `develop`.
-2. El repositorio actual no contiene `backend/`, `frontend/`, `tests/`, archivos de dependencias ni comandos de prueba reproducibles.
-3. Por los dos puntos anteriores, no se crea aún un workflow definitivo en `.github/workflows/`; hacerlo antes produciría un CI especulativo y no ejecutable.
+1. La propuesta documental de datos de #2 está revisable en la PR #6, pero aún no está aprobada ni integrada y no incluye una migración ejecutable.
+2. Los Issues #3 y #4 continúan abiertos: falta el contrato de autenticación/API, la implementación de backend/frontend y el entorno de prueba.
+3. El repositorio actual no contiene `backend/`, `frontend/`, `tests/`, archivos de dependencias ni comandos de prueba reproducibles.
+4. Por los puntos anteriores, no se crea aún un workflow definitivo en `.github/workflows/`; hacerlo antes produciría un CI especulativo y no ejecutable.
 
 Cuando las dependencias se integren, actualizar cada fila con fecha, rama/commit/PR, resultado real, enlace a evidencia y estado final en `REGISTRO_RESULTADOS_S1.md`.
