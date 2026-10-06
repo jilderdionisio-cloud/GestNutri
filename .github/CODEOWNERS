@@ -1,0 +1,21 @@
+# Los propietarios revisan cambios en su área antes de integrar a develop.
+# Alex aún debe confirmar su usuario de GitHub. Mientras tanto, el propietario
+# del repositorio revisa temporalmente el área de QA/CI.
+
+/frontend/ @gennynavarrete
+/docs/ui/ @gennynavarrete
+
+/backend/ @lortizbaeza-gif
+/docs/api/ @lortizbaeza-gif
+
+/database/ @dianabojorquezcetina-max
+/backend/**/migrations/ @dianabojorquezcetina-max
+/docs/data/ @dianabojorquezcetina-max
+
+/tests/ @jilderdionisio-cloud
+/.github/ @jilderdionisio-cloud
+/docs/qa/ @jilderdionisio-cloud
+
+# Políticas y contratos: revisión obligatoria por el orquestador humano/agente.
+/docs/GOBIERNO_REPOSITORIO.md @jilderdionisio-cloud
+/docs/CONTRATOS/ @jilderdionisio-cloud
