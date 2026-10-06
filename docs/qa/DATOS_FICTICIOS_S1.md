@@ -8,8 +8,8 @@ Estos datos son sintéticos, anónimos y exclusivamente para pruebas. No contien
 | --- | --- | --- |
 | `QA-USR-VALIDO` | Inicio de sesión válido | Cuenta de prueba que el backend cree para el entorno; identificarla en el entorno, nunca versionar una contraseña. |
 | `QA-USR-INVALIDO` | Inicio de sesión rechazado | Identificador ficticio `qa.invalido@example.test` y contraseña de prueba generada en ejecución; no reutilizar credenciales reales. |
-| `QA-PAC-COMPLETO` | Alta, lista, búsqueda, detalle y edición | Nombre(s): `Iris`; apellidos: `Prueba Rivera`; teléfono: `5550102020`; correo opcional: `iris.prueba@example.test`; fecha de nacimiento opcional: `1990-01-15`; alergias: `Ninguna conocida`; restricciones: `Sin restricciones`. |
-| `QA-PAC-OPCIONALES-VACIOS` | Validar representación de opcionales | Nombre(s): `Noa`; apellidos: `Control`; teléfono: `5550102021`; correo, fecha de nacimiento, alergias y restricciones: usar ausencia o valor vacío únicamente según lo que defina el contrato aprobado. |
+| `QA-PAC-COMPLETO` | Alta, lista, búsqueda, detalle y edición | Según la propuesta v1 de PR #6: `first_name`: `Iris`; `last_name`: `Prueba Rivera`; `phone`: `+525550102020`; `email`: `iris.prueba@example.test`; `birth_date`: `1990-01-15`; `allergies`: `Ninguna conocida`; `restrictions`: `Sin restricciones`. |
+| `QA-PAC-OPCIONALES-VACIOS` | Validar representación de opcionales | Según la propuesta v1 de PR #6: `first_name`: `Noa`; `last_name`: `Control`; `phone`: `+525550102021`; `email`, `allergies` y `restrictions`: `""`; `birth_date`: `null`. Usar esta forma solo cuando la propuesta se apruebe o el contrato final conserve su semántica. |
 | `QA-LISTA-VACIA` | Estado vacío | Entorno aislado sin pacientes o respuesta simulada vacía autorizada por el propietario de la capa. |
 | `QA-BUSQUEDA-SIN-COINCIDENCIA` | Búsqueda sin resultado | Texto: `ZZZ-NO-COINCIDE-S1`. |
 | `QA-ID-INEXISTENTE` | Detalle no encontrado | Identificador inexistente creado conforme al formato de ID publicado por backend; no asumir un tipo de ID antes del contrato. |
@@ -21,4 +21,4 @@ Estos datos son sintéticos, anónimos y exclusivamente para pruebas. No contien
 1. Cargar los datos solo en un entorno local o de pruebas aislado tras recibir las instrucciones de migración y carga de #2/#3.
 2. Registrar el identificador efectivo que genere el servidor en el resultado de la ejecución; no fijar ni suponer su formato.
 3. Eliminar o reiniciar el entorno de pruebas al terminar según el procedimiento del propietario de datos/backend.
-4. Si el contrato cambia, actualizar este documento y la matriz antes de ejecutar casos afectados.
+4. Si el contrato cambia, actualizar este documento y la matriz antes de ejecutar casos afectados. En particular, confirmar primero la propuesta de PR #6 con backend y el orquestador.
