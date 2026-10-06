@@ -33,7 +33,7 @@
 2. Implementar pantallas de acceso, lista/búsqueda y formulario de pacientes.
 3. Consumir únicamente el contrato de API publicado y añadir pruebas de componentes.
 
-### Alex - QA/CI
+### Alex (`jilderdionisio-cloud`) - QA/CI
 
 1. Definir casos de prueba críticos en `docs/qa/`.
 2. Configurar GitHub Actions en `.github/workflows/` una vez que existan los comandos de prueba.

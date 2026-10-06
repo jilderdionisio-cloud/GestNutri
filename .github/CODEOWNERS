@@ -1,6 +1,5 @@
 # Los propietarios revisan cambios en su área antes de integrar a develop.
-# Alex aún debe confirmar su usuario de GitHub. Mientras tanto, el propietario
-# del repositorio revisa temporalmente el área de QA/CI.
+# Alex es @jilderdionisio-cloud, responsable de QA/CI y propietario del repositorio.
 
 /frontend/ @gennynavarrete
 /docs/ui/ @gennynavarrete
