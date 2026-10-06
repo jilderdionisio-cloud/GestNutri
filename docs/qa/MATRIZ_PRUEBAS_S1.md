@@ -29,13 +29,13 @@
 | S1-INT-01 | Flujo integrado | Crítica | HU-01 a HU-04 integradas, contratos y entorno disponibles | `QA-USR-VALIDO`, `QA-PAC-COMPLETO` | Autenticarse → listar/buscar → crear → abrir expediente → editar → recargar | El paciente creado conserva los cambios y UI/API/datos coinciden | Pendiente | Pendiente | BLOCKED | — |
 | S1-SEC-01 | Transversal | Crítica | API y UI disponibles | Sin sesión, entradas inválidas | Repetir accesos no autorizados y errores de validación/carga | 401/403 y errores no revelan credenciales, trazas ni datos de otros pacientes | Pendiente | Pendiente | BLOCKED | — |
 | S1-CON-01 | Transversal | Alta | Diccionario, API y UI aprobados | `QA-PAC-COMPLETO` | Comparar nombres, tipos, opcionalidad y errores en las tres capas | Sin discrepancias entre contrato de datos, API y representación UI | Pendiente | Pendiente | BLOCKED | — |
-| S1-CI-01 | CI inicial | Alta | Comandos backend/frontend estables y documentados | No aplica | Ejecutar los comandos publicados en un clon limpio | Los comandos terminan correctamente, sin credenciales reales; resultados adjuntos a CI | Pendiente | Pendiente | BLOCKED | — |
+| S1-CI-01 | CI inicial | Alta | Comandos backend/frontend estables y documentados | No aplica | Ejecutar los comandos publicados en un clon limpio | Los comandos terminan correctamente, sin credenciales reales; resultados adjuntos a CI | En `develop` (`2071dcc`) existen `backend/`, `frontend/` y `tests/` solo con `.gitkeep`; faltan manifiestos de dependencias, pruebas ejecutables y comandos reproducibles | Inventario de `develop` y registro S1 | BLOCKED | Bloqueado por falta de comandos verificables; no crear workflow especulativo |
 
 ## Bloqueadores actuales
 
 1. La propuesta documental de datos de #2 está revisable en la PR #6, pero aún no está aprobada ni integrada y no incluye una migración ejecutable.
 2. Los Issues #3 y #4 continúan abiertos: falta el contrato de autenticación/API, la implementación de backend/frontend y el entorno de prueba.
-3. El repositorio actual no contiene `backend/`, `frontend/`, `tests/`, archivos de dependencias ni comandos de prueba reproducibles.
+3. En `develop` (`2071dcc`) existen `backend/`, `frontend/` y `tests/` como estructura inicial con `.gitkeep`; faltan manifiestos de dependencias, pruebas ejecutables y comandos de prueba reproducibles.
 4. Por los puntos anteriores, no se crea aún un workflow definitivo en `.github/workflows/`; hacerlo antes produciría un CI especulativo y no ejecutable.
 
 Cuando las dependencias se integren, actualizar cada fila con fecha, rama/commit/PR, resultado real, enlace a evidencia y estado final en `REGISTRO_RESULTADOS_S1.md`.
