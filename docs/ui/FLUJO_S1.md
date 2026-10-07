@@ -1,16 +1,13 @@
-# Flujo de Sprint 1 — demostración local
+# Flujo de Sprint 1
 
-Rama: feature/HU-02-patient-frontend, creada desde origin/develop.
+Inicio → lista/búsqueda paginada → alta → expediente → edición → expediente. Cancelar y Volver regresan a la lista. Salir invoca logout en modo API. La navegación usa estado React, sin definir endpoints adicionales.
 
-Inicio simulado → lista/búsqueda → alta → guardar → expediente → editar → guardar. Cancelar y Volver regresan a la lista. Salir cierra la sesión visual. La navegación es estado interno de React; no define rutas de API.
+Dos modos seleccionados al iniciar Vite:
+- mock (predeterminado): adaptador local, escenarios visuales de error/vacío/no encontrado, cambios en memoria.
+- api: adaptador según PR #9, formulario username/password, cookies de sesión y CSRF. No muestra selector de escenarios ni agrega pacientes ficticios automáticamente.
 
-- Acceso: botón de simulación, carga, éxito o error. No hay campos de credenciales mientras falta AUTENTICACION_S1.md.
-- Lista: carga, resultados, búsqueda local por nombre/teléfono/correo, vacío y error con reintento.
-- Alta/edición: formulario compartido, errores por campo, guardado en curso, cancelación, error simulado y éxito en expediente.
-- Expediente: carga, identificación/contacto, alergias y restricciones, no encontrado y error con reintento.
+En modo API se recupera la sesión con auth/me/ y se obtiene CSRF con auth/csrf/. Login rota el token. Logout admite 204. La lista renderiza results, count y controles de página, y envía search (máximo 150 caracteres). Alta usa POST, edición PATCH; el adaptador excluye ID, fechas de auditoría y owner. Errores por campo se presentan en el formulario, 404 muestra no encontrado y errores de sesión regresan al acceso. Un error CSRF se muestra para revisión, no se reintenta una escritura automáticamente.
 
-El selector de escenarios permite reproducir los estados. Carga dura aproximadamente 450 ms. Para recuperar un error seleccionar Normal o reintentar; el escenario Error seguirá fallando hasta cambiarlo.
+Las pantallas incluyen carga, error, vacío, guardado y éxito. La definición central de campos vive en patients.js; el adaptador de red en api-client.js y la selección de modo en data-client.js. No hay PUT, DELETE ni funcionalidades fuera de Sprint 1.
 
-Los datos se centralizan en frontend/src/patients.js; frontend/src/client.js expone operaciones locales, sin llamadas HTTP. Se mantienen exclusivamente en memoria y se restablecen al recargar; salir no reinicia los datos de la demostración.
-
-Pendiente: aprobación de #2/#3, contrato de autenticación, rutas y formatos API, integración real, pruebas visuales/componentes en navegador, revisión y PR hacia develop. No se declara terminada la integración ni el issue #4.
+Fuente: guía y contratos v1-auth.md/v1-patients.md del commit ef9356f de backend. Es integración local contra el contrato implementado, todavía pendiente de revisión del equipo. Mantener las PR abiertas; no se declara el issue completo ni aprobada la integración.
