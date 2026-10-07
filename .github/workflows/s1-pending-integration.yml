@@ -1,0 +1,93 @@
+name: S1 pending integration CI
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - .github/workflows/s1-pending-integration.yml
+      - docs/qa/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-postgresql:
+    name: Backend migrations and tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: gestnutri_ci
+          POSTGRES_USER: gestnutri_ci
+          POSTGRES_PASSWORD: gestnutri_ci
+        options: >-
+          --health-cmd "pg_isready -U gestnutri_ci -d gestnutri_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DJANGO_DEBUG: 'true'
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      POSTGRES_DB: gestnutri_ci
+      POSTGRES_USER: gestnutri_ci
+      POSTGRES_PASSWORD: gestnutri_ci
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: '5432'
+    steps:
+      - name: Checkout backend PR #9 source
+        uses: actions/checkout@v4
+        with:
+          ref: ef9356faaa0b46b69c44a95b65f8a941e1168dde
+          path: backend-source
+          fetch-depth: 1
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend-source/backend/requirements.txt
+      - name: Install backend dependencies
+        working-directory: backend-source/backend
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+      - name: Verify backend source whitespace
+        working-directory: backend-source
+        run: git show --check --oneline HEAD
+      - name: Check, migrate and test on PostgreSQL
+        working-directory: backend-source/backend
+        run: |
+          python manage.py check
+          python manage.py migrate --plan
+          python manage.py migrate --noinput
+          python manage.py showmigrations
+          python manage.py makemigrations --check --dry-run
+          python manage.py test accounts patients --noinput
+
+  frontend:
+    name: Frontend tests and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout frontend PR #11 source
+        uses: actions/checkout@v4
+        with:
+          ref: afe5f4ce698dafb32918c40490321df158e42b67
+          path: frontend-source
+          fetch-depth: 1
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend-source/frontend/package-lock.json
+      - name: Verify frontend source whitespace
+        working-directory: frontend-source
+        run: git show --check --oneline HEAD
+      - name: Run frontend tests and build
+        working-directory: frontend-source/frontend
+        run: |
+          npm ci
+          npm test
+          npm run build
