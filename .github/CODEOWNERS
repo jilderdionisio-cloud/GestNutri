@@ -14,7 +14,7 @@
 
 /tests/ @jilderdionisio-cloud
 /.github/ @jilderdionisio-cloud
-/docs/qa/ @jilderdionisio-cloud
+/docs/qa/ @jilderdionisio-cloud @gennynavarrete
 
 # Políticas y contratos: revisión obligatoria por el orquestador humano/agente.
 /docs/GOBIERNO_REPOSITORIO.md @jilderdionisio-cloud
