@@ -5,8 +5,8 @@
 /frontend/ @gennynavarrete
 /docs/ui/ @gennynavarrete
 
-/backend/ @lortizbaeza-gif
-/docs/api/ @lortizbaeza-gif
+/backend/ @lortizbaeza-gif @dianabojorquezcetina-max
+/docs/api/ @lortizbaeza-gif @dianabojorquezcetina-max
 
 /database/ @dianabojorquezcetina-max
 /backend/**/migrations/ @dianabojorquezcetina-max
