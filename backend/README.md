@@ -27,14 +27,13 @@ secreto, hosts y HTTPS. No hay registro público de profesionales.
 .venv/Scripts/python.exe manage.py makemigrations --check --dry-run
 ```
 
-La migración inicial de pacientes está pendiente de Diana. Hasta integrarla,
-validar el borrador con `manage.py test --settings=config.test_settings`.
-Estas settings crean pacientes solo en la base temporal de pruebas y no deben
-usarse para el servidor. Después, ejecutar pruebas normales con migraciones.
-CI corresponde a S1-QA.
+Se incorporó la migración inicial de Diana (PR #12) sin modificarla. Las pruebas
+normales usan migraciones reales. PostgreSQL 17.11 / UTF-8 / ICU es pasó las 21
+pruebas; ver `docs/api/VALIDACION_POSTGRESQL.md`. CI corresponde a S1-QA.
 
 ## Integración pendiente
 
-Se incorporó la propuesta de Diana `81f2b36` y se prepararon modelo y endpoints
-para revisión. La propiedad por profesional y migración requieren coordinación
-con Diana. Ver `docs/api/v1-patients.md` y `docs/api/S1-BE-status.md`.
+Se incorporaron la propuesta de Diana `81f2b36` y su migración `95ada29`.
+El modelo, migración y endpoints fueron verificados en PostgreSQL local.
+Faltan CI, revisión de QA/orquestador y revisión humana antes de integrar.
+Ver `docs/api/v1-patients.md` y `docs/api/S1-BE-status.md`.
