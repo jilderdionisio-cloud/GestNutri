@@ -1,4 +1,4 @@
-// Única definición de campos: propuesta de Diana, pendiente de aprobación.
+// Única definición de campos: diccionario de Diana y contrato implementado en PR #9; revisión pendiente.
 export const fields = [
   { key: 'first_name', label: 'Nombre', required: true, max: 100 },
   { key: 'last_name', label: 'Apellidos', required: true, max: 150 },
@@ -21,9 +21,9 @@ export function validate(patient) {
   if (patient.phone && !/^\+[1-9][0-9]{7,14}$/.test(patient.phone.trim())) errors.phone = 'Usa formato internacional, por ejemplo +12025550123.';
   if (patient.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patient.email.trim())) errors.email = 'Revisa el formato del correo.';
   if (patient.birth_date) {
-    const date = new Date(`${patient.birth_date}T12:00:00`);
+    const date = new Date(`${patient.birth_date}T00:00:00Z`);
     const today = new Date();
-    if (Number.isNaN(date.valueOf()) || date.getFullYear() !== Number(patient.birth_date.slice(0,4)) || date.getMonth()+1 !== Number(patient.birth_date.slice(5,7)) || date.getDate() !== Number(patient.birth_date.slice(8,10)) || date > today) errors.birth_date = 'Ingresa una fecha real que no sea futura.';
+    if (Number.isNaN(date.valueOf()) || date.getUTCFullYear() !== Number(patient.birth_date.slice(0,4)) || date.getUTCMonth()+1 !== Number(patient.birth_date.slice(5,7)) || date.getUTCDate() !== Number(patient.birth_date.slice(8,10)) || date > today) errors.birth_date = 'Ingresa una fecha real que no sea futura.';
   }
   return errors;
 }
