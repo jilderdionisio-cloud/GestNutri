@@ -3,6 +3,7 @@ from uuid import UUID
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
+from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -142,7 +143,15 @@ class PatientAPITests(TestCase):
                                      HTTP_X_CSRFTOKEN=token).status_code, 201)
 
     def test_database_constraints(self):
-        for values in ({'phone': 'bad'}, {'first_name': ''}, {'allergies': 'x' * 2001}):
+        for values in ({'phone': 'bad'}, {'first_name': ''}, {'first_name': '   '},
+                       {'last_name': ''}, {'last_name': '   '},
+                       {'allergies': 'x' * 2001}, {'restrictions': 'x' * 2001}):
             with self.subTest(values=str(values)[:40]):
                 with self.assertRaises(IntegrityError), transaction.atomic():
                     Patient.objects.create(owner=self.owner, **(self.payload | values))
+
+    def test_owner_cannot_be_deleted_with_patients(self):
+        Patient.objects.create(owner=self.owner, **self.payload)
+        with self.assertRaises(ProtectedError):
+            self.owner.delete()
+        self.assertTrue(get_user_model().objects.filter(pk=self.owner.pk).exists())

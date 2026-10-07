@@ -1,7 +1,7 @@
 # API v1 de pacientes — borrador implementado
 
 Basado en la propuesta de Diana 81f2b36 en docs/data/CONTRATO_PACIENTE_S1.md.
-Pendiente de confirmación de datos y orquestador; no es aprobación del contrato.
+Acuerdos registrados en PR #9. La migración de PR #12 se incorporó y validó en PostgreSQL; la revisión de integración sigue pendiente.
 
 | Método | Ruta | Resultado |
 | --- | --- | --- |
@@ -34,31 +34,30 @@ identificadores estables. Validaciones fallidas no producen escrituras parciales
 
 Aplicación patients; modelo patients.Patient; tabla patients_patient.
 Modelo real: backend/patients/models.py. Migración inicial prevista:
-backend/patients/migrations/0001_initial.py, todavía pendiente de Diana.
+backend/patients/migrations/0001_initial.py, entregada por Diana en PR #12 (95ada29).
 
 Backend propone owner: FK obligatoria a settings.AUTH_USER_MODEL (User Django,
 PK entero), relación uno-a-muchos y on_delete=PROTECT. Se asigna desde sesión,
 no se acepta en entrada ni se devuelve. Staff/superusuarios tampoco ven
-pacientes ajenos en esta API. Confirmar esta adición en #2 con el orquestador.
+pacientes ajenos en esta API. Esta relación fue confirmada en la conversación de PR #9.
 No se añaden consultas, mediciones ni campos clínicos adicionales.
 
 Versiones exactas en backend/requirements.txt: Django 5.2.18, DRF 3.16.1,
-psycopg 3.3.6. PostgreSQL está pendiente de validación real; no se afirma una
-versión probada. Conexión mediante variables POSTGRES_*.
+psycopg 3.3.6. PostgreSQL 17.11, UTF8 y locale ICU es es la
+configuración probada. Conexión mediante variables POSTGRES_*.
 
-Después de confirmar el modelo, Diana genera la inicial desde backend:
+La inicial ya existe: no generar otra. Aplicar y comprobar desde backend:
 
 ```text
-python manage.py makemigrations patients
 python manage.py migrate --plan
 python manage.py migrate
+python manage.py showmigrations
 python manage.py makemigrations --check --dry-run
 python manage.py test
 ```
 
-La inicial debe incluir UUID, nulidad, longitudes, timestamps, FK y CHECK del
-modelo. Revisar SQL y probar en PostgreSQL. Hasta integrar esa migración,
-manage.py test --settings=config.test_settings verifica el modelo en SQLite
-con tabla temporal y no valida migraciones. No usar esas settings para el
-servidor ni run-syncdb como sustituto de la migración. Los endpoints están
-preparados para revisión, pero todavía no son desplegables.
+Pasaron las 21 pruebas normales en PostgreSQL 17.11 con migraciones reales.
+Los cinco CHECK, PK y FK se comprobaron. Para los casos probados, Ana María
+coincide con ana maría, pero no con ana maria; no se eliminan acentos.
+Ver VALIDACION_POSTGRESQL.md. CI, revisión QA/orquestador y revisión humana
+siguen pendientes; las pruebas locales no autorizan la fusión por sí solas.
