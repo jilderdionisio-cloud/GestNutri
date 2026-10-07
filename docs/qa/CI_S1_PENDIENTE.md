@@ -19,6 +19,8 @@ el job y no representan un secreto de despliegue.
   integrada en `develop`.
 - No sustituye el E2E de navegador con `VITE_DATA_MODE=api` ni la revisión
   humana.
+- No ejecuta una comprobación global de whitespace: los commits pendientes
+  heredan espacios finales en documentación ajena al código que se valida.
 - Cuando backend y frontend entren en una rama de integración real, reemplazar
   los checkouts fijados por el checkout normal de esa rama y añadir el E2E.
 - La aprobación debe ser de un CODEOWNER independiente de quien abra la PR.

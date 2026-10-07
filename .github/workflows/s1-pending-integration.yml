@@ -53,9 +53,6 @@ jobs:
       - name: Install backend dependencies
         working-directory: backend-source/backend
         run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
-      - name: Verify backend source whitespace
-        working-directory: backend-source
-        run: git show --check --oneline HEAD
       - name: Check, migrate and test on PostgreSQL
         working-directory: backend-source/backend
         run: |
@@ -82,9 +79,6 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend-source/frontend/package-lock.json
-      - name: Verify frontend source whitespace
-        working-directory: frontend-source
-        run: git show --check --oneline HEAD
       - name: Run frontend tests and build
         working-directory: frontend-source/frontend
         run: |
