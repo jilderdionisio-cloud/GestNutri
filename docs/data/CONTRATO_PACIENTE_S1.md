@@ -1,22 +1,24 @@
-# Contrato de datos de Paciente — propuesta v1
+# Contrato de datos de Paciente — acuerdos de Sprint 1
 
 Entrega inicial de Diana para desbloquear la coordinación con Fernanda (Issue #3) y Genny (Issue #4). Relacionado con #2; **no cierra #2**.
 
-Estado: preparado para revisión, sin aprobación del orquestador ni de backend. No hay endpoints implementados por esta entrega. Las rutas, autenticación, paginación y búsqueda las documentará Fernanda en `docs/api/`; este documento define el objeto y las reglas propuestas, no el envoltorio de listas ni rutas definitivas.
+Estado al revisar `ef9356f`: acuerdos de datos confirmados, backend y migración implementados en PR #9; pendientes integración conjunta y decisión de fusión.
+
+Trazabilidad: [confirmación de Fernanda](https://github.com/jilderdionisio-cloud/GestNutri/pull/9#issuecomment-6030448080), [autorización del orquestador](https://github.com/jilderdionisio-cloud/GestNutri/pull/9#issuecomment-6030509298), [migración de Diana, PR #12](https://github.com/jilderdionisio-cloud/GestNutri/pull/12) y [revisión cruzada de ef9356f](https://github.com/jilderdionisio-cloud/GestNutri/pull/9#issuecomment-6041945193).
 
 ## Fuente de verdad
 
-[Diccionario de campos](DICCIONARIO_PACIENTE.md) y [modelo lógico](ERD_S1.md). Los nombres externos e internos propuestos coinciden. No usar `phoneNumber`, `nombre`, `birthDate` u otras variantes para esos campos.
+[Diccionario de campos](DICCIONARIO_PACIENTE.md) y [modelo lógico](ERD_S1.md). Los nombres canónicos externos coinciden con el modelo; owner es exclusivamente interno. No usar `phoneNumber`, `nombre`, `birthDate` u otras variantes para esos campos.
 
 ## Ejemplos ficticios
 
-Alta mínima propuesta:
+Alta mínima:
 
 ```json
 {"first_name":"Ana María","last_name":"Ejemplo Prueba","phone":"+12025550123"}
 ```
 
-Objeto de respuesta propuesto (datos completamente ficticios):
+Objeto de respuesta (datos completamente ficticios):
 
 ```json
 {
@@ -39,34 +41,32 @@ Edición parcial que elimina datos opcionales sin alterar los demás:
 {"email":"","birth_date":null,"restrictions":""}
 ```
 
-## Semántica propuesta para backend y frontend
+## Semántica implementada en PR #9
 
 - Crear exige `first_name`, `last_name` y `phone`; la respuesta incluye los diez campos, también los opcionales vacíos.
-- PATCH valida solo los campos enviados y conserva los omitidos. Si backend ofrece PUT, exigirá todos los campos editables; los opcionales también deben enviarse explícitamente. No implementar PUT con semántica ambigua.
+- PATCH valida solo los campos enviados y conserva los omitidos. PUT y DELETE no están expuestos: devuelven 405.
 - `id`, `created_at` y `updated_at` son de solo lectura: rechazar su envío en solicitudes de escritura. Rechazar también nombres de campos desconocidos para detectar contratos incompatibles.
-- Propuesta de errores de validación: HTTP 400 con un objeto de listas de mensajes por campo; errores generales bajo `non_field_errors`. Ejemplo: `{"phone":["Usa formato internacional, por ejemplo +12025550123."]}`. Fernanda debe confirmar forma y política; las frases no son identificadores estables.
+- Errores de validación: HTTP 400 con un objeto de listas de mensajes por campo; errores generales bajo `non_field_errors`. Ejemplo: `{"phone":["Usa formato internacional, por ejemplo +12025550123."]}`. Las frases no son identificadores estables.
 - Las fechas no incluyen hora; timestamps se serializan en UTC. No guardar edad calculada ni prefijos regionales por separado.
 - Para WhatsApp, la interfaz podrá derivar el destino quitando únicamente el signo `+` de un teléfono ya validado. No almacenar una URL adicional ni enviar mensajes automáticamente. Los ejemplos no se usan para contactar personas.
-- La UI puede mostrar validaciones equivalentes para orientar; el servidor sigue siendo la autoridad. La búsqueda y el formato de lista están pendientes del contrato API de Fernanda.
+- La UI puede mostrar validaciones equivalentes para orientar; el servidor sigue siendo la autoridad. El [contrato API](../api/v1-patients.md) define las rutas, búsqueda y paginación.
 
-## Acuerdos necesarios con Fernanda y el orquestador
+## Acuerdos implementados y evidencia
 
-| Decisión | Propuesta de Diana | Estado |
-| --- | --- | --- |
-| Aplicación Django y ruta | Fernanda publica nombre y ruta reales; no se crean rutas supuestas | Pendiente |
-| Identificador | UUID v4 generado por servidor; JSON string | Pendiente |
-| Campos y reglas | Los diez campos del diccionario; teléfono obligatorio; opcionales según tabla | Pendiente |
-| Nulidad y unicidad | Solo fecha admite NULL; solo PK es única | Pendiente |
-| Propiedad del expediente | Definir con backend; justificar cualquier FK adicional en #2 | Pendiente |
-| Errores y escritura | Reglas anteriores de PATCH/PUT y errores por campo | Pendiente |
-| Versiones y ejecución | Fernanda publica versiones de Django/DRF/PostgreSQL y comandos reproducibles | Pendiente |
-| Modelo y migración | Acordar quién incorpora el modelo al área backend; Diana prepara la migración después de aprobación | Pendiente |
+- App `patients`, modelo `patients.Patient`, tabla `patients_patient`.
+- Modelo base `3028853`; inicial de Diana `95ada29`, incorporada sin cambios a #9. No generar otra inicial.
+- UUID v4, campos del diccionario, solo fecha nullable y contactos sin unicidad adicional.
+- `owner` interno obligatorio, FK a AUTH_USER_MODEL con PROTECT, asignado desde sesión y no expuesto; aislamiento por profesional.
+- Sesiones/CSRF según [autenticación](../api/v1-auth.md); GET/POST en `/api/v1/patients/`, GET/PATCH por UUID. Errores 400 por validación, 403 sesión/CSRF, 404 paciente inexistente o ajeno.
+- Lista `{count,next,previous,results}`, página de 20 y máximo 100. Búsqueda de subcadenas en nombres, apellidos, teléfono y correo, máximo 150; orden `last_name/first_name/id`, siempre dentro del propietario.
+- Django 5.2.18, DRF 3.16.1 y psycopg 3.3.6, fijados en requirements. Fernanda publicó evidencia de PostgreSQL 17.11, UTF8, ICU `es`, collation 153.14.37. En los casos probados `Ana María` coincide con `ana maría`, pero no con `ana maria`; otra collation requiere repetir pruebas.
+- [Evidencia PostgreSQL](../api/VALIDACION_POSTGRESQL.md): 21 pruebas y migraciones reales reportadas por Fernanda. Revisión local de Diana: 21 pruebas SQLite con settings normales y sin cambios de modelo pendientes. No son la misma ejecución.
 
-Fernanda puede revisar esta propuesta e inicializar su aplicación. La implementación de serializers/endpoints espera el acuerdo del contrato. Tras confirmación en #2, Diana preparará una única migración inicial en la ruta real; si otro cambio ya creó una inicial, se coordina antes de generar otra.
+La validación publicada no constituye aprobación global de integración ni prueba conjunta con frontend. Mantener las PR #6/#9/#12 sin fusionar o cerrar hasta la decisión del equipo.
 
-## Casos de aceptación para la implementación posterior
+## Casos de aceptación del contrato
 
-| Caso | Resultado esperado propuesto |
+| Caso | Resultado esperado |
 | --- | --- |
 | Alta mínima del ejemplo | Persistir obligatorios; opcionales vacíos/NULL y valores de servidor |
 | Falta nombre/apellidos/teléfono, o nombre solo espacios | Error del campo; sin escritura parcial |
@@ -75,10 +75,10 @@ Fernanda puede revisar esta propuesta e inicializar su aplicación. La implement
 | Fecha inexistente, futura o cadena vacía | Rechazar; `null` sí válido |
 | Correo vacío / correo mal formado | Aceptar / rechazar |
 | NULL en texto opcional u obligatorio | Rechazar |
-| Teléfono o correo compartido por dos pacientes | Permitir, si se aprueba la no unicidad |
+| Teléfono o correo compartido por dos pacientes | Permitir |
 | PATCH omite un campo / lo limpia explícitamente | Conservar / limpiar según diccionario |
 | Enviar ID, timestamp o campo desconocido | Rechazar |
 | Actualizar paciente | Conservar ID/created_at y actualizar updated_at |
-| Acceso de usuario no autorizado | Rechazar según política que publique Fernanda |
+| Acceso de usuario no autorizado | Rechazar según sesión y propietario |
 
-Estos son criterios propuestos, no resultados de pruebas ejecutadas.
+Esta tabla define criterios; los resultados ejecutados y sus límites se consultan en la evidencia enlazada. No representa una ejecución nueva de todos los casos.

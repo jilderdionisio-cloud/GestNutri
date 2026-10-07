@@ -1,44 +1,42 @@
 # Persistencia de pacientes — Sprint 1
 
-Responsable: Diana. Issue #2. **Entrega documental inicial; migración pendiente de acuerdos con Fernanda.**
+Responsable: Diana. Issue #2. Estado de referencia: backend `ef9356f`, migración `95ada29`, acuerdos confirmados e inicial incorporada a PR #9. No cierra incidencias ni autoriza fusión.
 
-## Documentos para iniciar la coordinación
+## Documentos vigentes
 
-- [Contrato de datos y ejemplos](../docs/data/CONTRATO_PACIENTE_S1.md).
-- [Diccionario de Paciente](../docs/data/DICCIONARIO_PACIENTE.md).
-- [Diagrama y relaciones pendientes](../docs/data/ERD_S1.md).
+- [Contrato y acuerdos](../docs/data/CONTRATO_PACIENTE_S1.md).
+- [Diccionario](../docs/data/DICCIONARIO_PACIENTE.md).
+- [ERD con relación owner](../docs/data/ERD_S1.md).
+- [Guía de ejecución con PostgreSQL e integración](../docs/api/INTEGRACION_LOCAL_S1.md).
 
-PostgreSQL es el destino de persistencia. La versión soportada y la configuración de conexión las publicará backend. Usar una base de desarrollo desechable, UTF-8 y timestamps con zona horaria; API propone UTC. Guardar credenciales en variables de entorno locales, nunca en Git ni en evidencias. No incluir volcados, bases locales ni datos reales.
+La inicial ya existe en `backend/patients/migrations/0001_initial.py` y corresponde al modelo `patients.Patient`, tabla `patients_patient`. Fue generada por Diana desde `3028853` con Django 5.2.18 y conserva los cinco CHECK y la dependencia intercambiable de AUTH_USER_MODEL. No regenerarla ni mantener SQL paralelo.
 
-## Secuencia de implementación
+## Entorno y evidencia publicada
 
-1. Fernanda confirma en #2 aplicación, ruta de migraciones, ID, validaciones, versiones y política de acceso. El orquestador revisa el contrato.
-2. Acordar la incorporación del modelo en el área backend. Esta entrega no modifica `backend/` ni crea una aplicación paralela.
-3. Diana genera la migración inicial desde el modelo acordado con la versión Django del proyecto, únicamente en la ruta confirmada. No mantener un esquema SQL independiente de Django.
-4. Ejecutar el comando de migraciones publicado por Fernanda sobre una base PostgreSQL nueva. No ejecutar sobre producción ni borrar bases existentes.
-5. Verificar restricciones, persistencia y coincidencia modelo/migración. Registrar evidencia sin secretos en la PR.
+Fernanda probó PostgreSQL 17.11, UTF8, proveedor ICU, locale `es` y versión de collation 153.14.37; LC_COLLATE/LC_CTYPE libc `C`. Su instancia temporal en 127.0.0.1:55439 fue detenida: ese puerto no constituye un servicio disponible.
 
-## Comandos de referencia, todavía no ejecutables aquí
+La [evidencia de backend](../docs/api/VALIDACION_POSTGRESQL.md) registra migraciones aplicadas, segunda ejecución sin pendientes, 21 pruebas normales PostgreSQL, cinco CHECK, PK/FK y búsqueda con mayúsculas y acentos. Los [metadatos](../docs/api/postgresql-evidence.json) conservan el detalle del entorno. No se promete idéntico comportamiento con otra collation.
 
-Estos ejemplos solo aplican si Fernanda confirma `backend/manage.py` y el entorno activado; no son comandos verificados del repositorio actual:
+Diana revisó la evidencia y repitió 21 pruebas en SQLite con settings normales sobre `ef9356f`, sin cambios pendientes de modelo. Esa ejecución local no se presenta como nueva validación PostgreSQL.
+
+## Repetir las comprobaciones
+
+Seguir primero la guía enlazada para crear una base nueva y desechable, instalar las dependencias fijadas y configurar POSTGRES_DB/USER/PASSWORD/HOST/PORT mediante entorno. No publicar credenciales ni usar bases reales. Confirmar POSTGRES_DB para evitar el fallback SQLite. Desde la raíz del repositorio con el entorno Python activado:
 
 ```text
 python backend/manage.py check
-python backend/manage.py makemigrations --check --dry-run
 python backend/manage.py migrate --plan
-python backend/manage.py migrate
+python backend/manage.py migrate --noinput
 python backend/manage.py showmigrations
+python backend/manage.py makemigrations --check --dry-run
+python backend/manage.py test --noinput
+python backend/manage.py migrate --noinput
 ```
 
-La generación de la inicial deberá especificar el nombre real de aplicación confirmado por Fernanda. Después de aplicar la migración, repetir `makemigrations --check --dry-run` y verificar los casos del contrato. Un segundo `migrate` no debe proponer trabajo pendiente. No confundir estos pasos con pruebas ya realizadas.
+Detenerse si falla cualquier paso. Registrar motor, versión, encoding, locale/collation, commit y resultados sin secretos. La última migración debe informar que no hay pendientes. No usar settings que deshabiliten migraciones. La guía detalla el privilegio temporal para crear la base de pruebas; no es una recomendación para producción.
 
-## Datos ficticios
+## Datos ficticios y pendientes
 
-Los ejemplos JSON del contrato son documentación; **no son fixtures de Django ni datos cargados**. No se aporta un comando de carga mientras no exista aplicación/endpoint aprobado. Si se requiere una fixture después, contendrá exclusivamente pacientes ficticios y usará la etiqueta real del modelo confirmada por backend.
+Los JSON del contrato son ejemplos, no fixtures ni datos cargados. Las pruebas usan exclusivamente datos ficticios. No versionar bases locales, volcados o archivos .env.
 
-## Estado comprobado de esta entrega
-
-- Se entregan diccionario, ERD, contrato propuesto y guía de persistencia.
-- No se crea esquema, modelo ejecutable, migración ni cambios en endpoints, permisos, frontend o CI.
-- No se afirma que `migrate` o `makemigrations --check` pasen: falta la aplicación Django.
-- La Issue #2 permanece abierta hasta completar migración, pruebas, revisión del orquestador y aprobación humana.
+La evidencia del backend no sustituye la prueba conjunta con frontend, CI ni revisiones humanas. Las PR #6, #9 y #12 se mantienen abiertas y sin fusionar hasta la decisión de integración del equipo. Esta actualización solo corrige documentación de datos; no altera modelo, migración, permisos ni endpoints.

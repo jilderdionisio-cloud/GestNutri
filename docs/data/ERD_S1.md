@@ -1,11 +1,16 @@
 # Modelo lógico de datos — Sprint 1
 
-**Propuesta v1 pendiente de aprobación.** Responsable: Diana. Issue #2.
+Responsable: Diana. Acuerdos confirmados en PR #9; revisión de referencia `ef9356f`. Integración pendiente. Véase la [trazabilidad del contrato](CONTRATO_PACIENTE_S1.md).
 
 ```mermaid
 erDiagram
+    USUARIO ||--o{ PACIENTE : posee
+    USUARIO {
+        integer id PK
+    }
     PACIENTE {
         uuid id PK
+        integer owner_id FK
         varchar100 first_name
         varchar150 last_name
         varchar16 phone
@@ -18,20 +23,16 @@ erDiagram
     }
 ```
 
-El diagrama representa una única entidad de gestión básica y expediente. Las reglas exactas y nombres canónicos están en [DICCIONARIO_PACIENTE.md](DICCIONARIO_PACIENTE.md). UUID es una propuesta; no se ha creado una tabla ni una migración.
+`patients.Patient` usa la tabla `patients_patient`. El diagrama refleja el User Django actual, con PK entera; la migración referencia `settings.AUTH_USER_MODEL` mediante `swappable_dependency`, no una dependencia rígida al nombre de la clase.
 
 ## Relaciones y límites
 
-No hay relaciones entre entidades clínicas dentro del alcance autorizado de #2. Consultas y mediciones pertenecen a futuros Sprints; no se crean tablas vacías ni relaciones anticipadas. El nombre de tabla y de aplicación Django se confirmarán con Fernanda.
+Cada paciente pertenece a un usuario; un usuario puede tener cero o varios pacientes. `owner` es obligatorio y tiene `on_delete=PROTECT` en Django. La FK mantiene integridad referencial en PostgreSQL. Backend asigna el propietario desde sesión y filtra lectura/escritura por usuario, incluidos staff/superusuarios. La FK sola no implementa permisos.
 
-**Decisión pendiente de seguridad:** Fernanda y el orquestador deben definir si el expediente es compartido por usuarios autorizados o pertenece a un profesional. Si requiere propiedad, se debe justificar en #2 el campo adicional y acordar la relación al modelo de usuario (tipo de ID, nulidad, cardinalidad y política de eliminación) antes de implementar. Este diagrama no autoriza acceso global ni presupone aislamiento ya resuelto. Diana no implementa permisos.
+La relación owner es interna y no se expone ni acepta por API. Los diez campos canónicos externos, nulidad y longitudes están en el [diccionario](DICCIONARIO_PACIENTE.md). No hay tablas de consultas o mediciones en este alcance.
 
-## Consistencia que debe comprobar la migración posterior
+## Migración y evidencia
 
-1. Diez campos canónicos, una PK y ninguna unicidad adicional no acordada.
-2. Solo la fecha de nacimiento admite NULL; textos opcionales usan cadena vacía.
-3. Nombre, apellidos y teléfono son obligatorios según propuesta; timestamps los controla el servidor.
-4. UUID, límites y CHECK coinciden con el diccionario aprobado y con el estado del modelo Django.
-5. Aplicación limpia sobre PostgreSQL y ausencia de cambios pendientes en `makemigrations --check`.
+La inicial `backend/patients/migrations/0001_initial.py`, commit `95ada29` de Diana / PR #12, está incorporada sin modificaciones en #9. Conserva UUID v4, owner, timestamps, nulidad, longitudes, ausencia de unicidad adicional y cinco CHECK (nombres/apellidos no vacíos, teléfono y límites de ambos textos). No crear otra inicial.
 
-La revisión documental no sustituye estas pruebas. Su ejecución queda pendiente de la aplicación de Fernanda y de la migración aprobada.
+Fernanda publicó [validación PostgreSQL](../api/VALIDACION_POSTGRESQL.md) y [restricciones introspectadas](../api/postgresql-evidence.json). La revisión de Diana comprobó igualdad del archivo y 21 pruebas locales SQLite; no fue una repetición de PostgreSQL. La prueba conjunta de frontend y la decisión de integración quedan separadas de esta evidencia.

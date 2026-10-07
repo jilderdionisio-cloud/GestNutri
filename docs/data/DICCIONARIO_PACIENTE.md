@@ -2,9 +2,9 @@
 
 Responsable: Diana (`dianabojorquezcetina-max`). Referencias: Issues #2 y #3.
 
-**Estado: propuesta v1 para revisión de Fernanda y del orquestador; no es un contrato aprobado ni una implementación.** Los nombres siguientes son la única propuesta canónica para API y modelo. No hay alias. Véanse [contrato](CONTRATO_PACIENTE_S1.md) y [ERD](ERD_S1.md).
+**Estado: acuerdos de datos confirmados para la inicial e implementados en la PR #9; integración pendiente.** Véase la trazabilidad del [contrato](CONTRATO_PACIENTE_S1.md). Los diez nombres siguientes son los campos canónicos externos de la API. No hay alias. Véanse [contrato](CONTRATO_PACIENTE_S1.md) y [ERD](ERD_S1.md).
 
-| Campo canónico | Tipo JSON / Django propuesto / PostgreSQL | Entrada al crear | Nulidad y valor por defecto | Validación propuesta | Ejemplo ficticio |
+| Campo canónico | Tipo JSON / Django / PostgreSQL | Entrada al crear | Nulidad y valor por defecto | Validación acordada | Ejemplo ficticio |
 | --- | --- | --- | --- | --- | --- |
 | `id` | string UUID / UUIDField(primary_key=True) / uuid | Solo lectura | NOT NULL; UUID v4 generado en servidor | Inmutable; no aceptar en entradas | `f58b634c-daf9-4b8c-9c23-a25f9c837fd2` |
 | `first_name` | string / CharField(100) / varchar(100) | Obligatorio | NOT NULL; sin defecto | Recortar extremos; 1–100 caracteres; rechazar solo espacios; admitir acentos, espacios internos, guiones y apóstrofos | `Ana María` |
@@ -19,15 +19,19 @@ Responsable: Diana (`dianabojorquezcetina-max`). Referencias: Issues #2 y #3.
 
 ## Reglas comunes
 
-- UUID es una **propuesta pendiente de confirmación de Fernanda**; permite tratar `id` como identificador opaco en el frontend. No mezclar UUID y entero al implementar.
+- UUID v4 está confirmado y generado por el servidor; el frontend trata `id` como identificador opaco.
 - Solo `id` es único. Nombres, teléfono y correo pueden repetirse (familias pueden compartir contacto). No usar teléfono como clave primaria.
 - `null` solo se acepta para `birth_date`. Un campo opcional omitido al crear usa el defecto de la tabla. En PATCH, omitir significa conservar; enviar `""` limpia un texto opcional y `null` limpia la fecha.
-- No convertir números, booleanos, listas u objetos en texto automáticamente. La API validará tipo, longitud y formato antes de guardar.
+- No convertir números, booleanos, listas u objetos en texto automáticamente. La API valida tipo, longitud y formato antes de guardar.
 - `allergies=""` no equivale a «sin alergias»: no hay información registrada. No inferir hechos clínicos a partir de un campo vacío.
-- Obligatorios, longitudes, formato internacional, límites de texto y unicidad son propuestas que deben aceptarse expresamente en #2 antes de implementar.
+- Obligatorios, límites, nulidad y no unicidad adicional fueron confirmados en la PR #9; no cambiar el modelo sin nueva coordinación.
 
 ## Reparto de validaciones
 
-Fernanda implementará validaciones de servidor en su área. Diana reflejará las restricciones acordadas en la migración: PK, NOT NULL, longitudes y restricciones CHECK de nombres no vacíos, teléfono y límites de textos, cuando se acuerde su representación en el modelo. Una restricción dinámica de fecha futura se valida en servidor, no mediante un CHECK dependiente del día actual. Un campo Django con validadores no garantiza por sí solo validación en escrituras SQL directas.
+El servidor valida tipos, fechas y formatos. La inicial `backend/patients/migrations/0001_initial.py` conserva PK, NOT NULL, longitudes y cinco CHECK: nombres y apellidos no vacíos, formato internacional del teléfono y límites de 2000 para alergias/restricciones. La fecha futura se valida en servidor, no mediante un CHECK dinámico. Los validadores Django por sí solos no protegen escrituras SQL directas.
 
-No se añaden consultas, mediciones, notas, documentos ni campos extra en este Sprint. La relación de propiedad del paciente requiere una decisión explícita antes de habilitar acceso a datos; véase el ERD.
+## Relación interna confirmada
+
+`owner`: ForeignKey obligatoria a `settings.AUTH_USER_MODEL`, columna `owner_id` (entero para el User actual), NOT NULL, usuario 1:N pacientes, `on_delete=PROTECT` y dependencia intercambiable del modelo de usuario. Se asigna exclusivamente desde la sesión; no se acepta ni devuelve por API. No es un undécimo campo externo. Backend filtra por propietario, también para staff/superusuarios. PROTECT opera en Django; la FK de PostgreSQL preserva la integridad referencial.
+
+No se añaden consultas, mediciones, notas ni documentos clínicos. Véase el [ERD](ERD_S1.md) y la [evidencia PostgreSQL de Fernanda](../api/VALIDACION_POSTGRESQL.md).
