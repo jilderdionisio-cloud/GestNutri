@@ -33,6 +33,9 @@ pruebas; ver `docs/api/VALIDACION_POSTGRESQL.md`. CI corresponde a S1-QA.
 
 ## Integración pendiente
 
+Guía de arranque con PostgreSQL, proxy del frontend, sesión/CSRF y prueba
+conjunta: [Integración local S1](../docs/api/INTEGRACION_LOCAL_S1.md).
+
 Se incorporaron la propuesta de Diana `81f2b36` y su migración `95ada29`.
 El modelo, migración y endpoints fueron verificados en PostgreSQL local.
 Faltan CI, revisión de QA/orquestador y revisión humana antes de integrar.
