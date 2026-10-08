@@ -1,20 +1,16 @@
 # Reporte de defectos — Sprint 2 y Sprint 3
 
-## DEF-S2-API-001 — Parcialmente resuelto: aún se aceptan transporte no JSON y notación exponencial
+## DEF-S2-API-001 — Resuelto en candidato: transporte y decimal estrictos
 
-- **Estado:** parcialmente resuelto; revisado en `c9b1a2965233b65b060ee6a30acceebf0a9e9a1d`.
-- **Correcciones verificadas:** fecha sin offset, claves desconocidas, peso número JSON y JSON malformado devuelven 400.
-- **Pasos pendientes:** con sesión válida, enviar consulta válida como `multipart/form-data`; enviar medición `{ "weight_kg": "7e1" }`.
-- **Resultado actual:** ambos devuelven 201.
-- **Resultado esperado:** 415 para tipo de contenido no JSON y 400 para notación exponencial; el contrato exige JSON estricto y cadena decimal sin exponente.
+- **Estado:** resuelto en candidato; verificado en `a520d079d800dcd1b2b6f9a9f53b623e3c88636e`.
+- **Evidencia:** QA SQLite: multipart de consulta/medición/nota → 415 y `weight_kg: "7e1"` → 400; Action 37720944709: 32/32, incluyendo `followup` sobre `postgres:17`.
+- **Límite:** requiere integración en `develop` antes de cerrar como entrega de Sprint.
 
-## DEF-S2-API-002 — Parcialmente resuelto: parámetros de paginación inválidos y detalle de nota pendientes
+## DEF-S2-API-002 — Resuelto en candidato: validación de página y detalle de nota
 
-- **Estado:** parcialmente resuelto; revisado en `c9b1a2965233b65b060ee6a30acceebf0a9e9a1d`.
-- **Correcciones verificadas:** listas de consulta/medición/nota/historial devuelven envoltura paginada; historial conserva orden descendente; detalles de consulta/medición devuelven 200 al dueño y 404 al ajeno.
-- **Pasos pendientes:** solicitar historial con `page=abc`, `page=0`, `page_size=abc` o `page_size=-1`; solicitar `GET /api/v1/notes/{id}/` como dueño.
-- **Resultado actual:** páginas inválidas devuelven 404 o 200, en vez de 400; detalle de nota devuelve 404 aun al dueño porque la ruta no existe.
-- **Resultado esperado:** 400 para parámetros inválidos, 404 sólo para página inexistente/recurso ajeno, y detalle de nota autorizado.
+- **Estado:** resuelto en candidato; verificado en `a520d079d800dcd1b2b6f9a9f53b623e3c88636e`.
+- **Evidencia:** QA SQLite: cuatro parámetros inválidos → 400; página inexistente → 404; `GET /notes/{id}/` → 200 dueño/404 ajeno. Action 37720944709 ejecutó `followup` en `postgres:17`.
+- **Límite:** requiere integración en `develop` antes de cerrar como entrega de Sprint.
 
 ## DEF-S2-API-003 — Resuelto en candidato: evolución incorpora el sexto estado `invalid_data`
 
