@@ -74,9 +74,13 @@ def evolution(request, consultation_id):
     rows = list(Consultation.objects.filter(patient=current.patient).select_related('measurement').order_by('occurred_at','created_at','id'))
     index = next(i for i, row in enumerate(rows) if row.id == current.id)
     previous = rows[index - 1] if index else None
-    def weight(row): return row.measurement.weight_kg if row and hasattr(row, 'measurement') else None
-    now, before = weight(current), weight(previous)
-    if previous is None: state, delta = 'first', None
+    def weight(row):
+        value = row.measurement.weight_kg if row and hasattr(row, 'measurement') else None
+        return value, value is not None and (not value.is_finite() or value <= 0 or value > Decimal('9999.99'))
+    now, now_invalid = weight(current)
+    before, before_invalid = weight(previous)
+    if now_invalid or before_invalid: state, delta = 'invalid_data', None
+    elif previous is None: state, delta = 'first', None
     elif now is None or before is None: state, delta = 'insufficient_data', None
     else:
         delta = now - before; state = 'increase' if delta > 0 else 'decrease' if delta < 0 else 'equal'
