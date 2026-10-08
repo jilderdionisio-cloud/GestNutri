@@ -60,6 +60,16 @@ test('estados reales restantes de evolución se muestran desde la API PostgreSQL
   }
 });
 
+test('historial rechaza parámetros de paginación inválidos', async ({ page }) => {
+  await login(page, owner);
+  const fixture = await createPatientAndConsultations(page, 'HistoryPagination', []);
+  const statuses = await page.evaluate(async patientId => Promise.all([
+    'page=bad', 'page=0', 'page_size=bad', 'page_size=-1',
+  ].map(query => fetch(`/api/v1/patients/${patientId}/history/?${query}`, { credentials: 'include' })
+    .then(response => response.status))), fixture.patient.id);
+  expect(statuses).toEqual([400, 400, 400, 400]);
+});
+
 test('formatos, límite y consulta opcional de documentos se validan contra PostgreSQL', async ({ page }) => {
   await login(page, other);
   const foreign = await createPatientAndConsultations(page, 'ForeignDocument', ['65.00']);
