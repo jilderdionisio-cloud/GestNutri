@@ -7,4 +7,6 @@ urlpatterns = [
     path('consultations/<uuid:consultation_id>/measurements/', views.measurements),
     path('consultations/<uuid:consultation_id>/notes/', views.notes),
     path('consultations/<uuid:consultation_id>/evolution/', views.evolution),
+    path('consultations/<uuid:consultation_id>/', views.consultation_detail),
+    path('measurements/<uuid:measurement_id>/', views.measurement_detail),
 ]

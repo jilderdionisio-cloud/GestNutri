@@ -38,7 +38,7 @@ class FollowupApiTests(TestCase):
         self.assertEqual(self.client.post(f"/api/v1/consultations/{second['id']}/measurements/", {'weight_kg': '71.25'}, format='json').status_code, 201)
         self.assertEqual(self.client.post(f"/api/v1/consultations/{second['id']}/notes/", {'kind': 'note', 'text': 'Dato ficticio'}, format='json').status_code, 201)
         history = self.client.get(f'/api/v1/patients/{self.patient.id}/history/').json()
-        self.assertEqual(len(history), 2)
+        self.assertEqual(len(history['results']), 2)
         evolution = self.client.get(f"/api/v1/consultations/{second['id']}/evolution/").json()
         self.assertEqual(evolution['status'], 'increase')
         self.assertEqual(evolution['delta_kg'], '1.25')
@@ -49,6 +49,17 @@ class FollowupApiTests(TestCase):
         self.assertEqual(self.client.post(f"/api/v1/consultations/{mine['id']}/measurements/", {'weight_kg': '71.00'}, format='json').status_code, 400)
         self.assertEqual(self.client.get(f'/api/v1/patients/{self.other_patient.id}/history/').status_code, 404)
         self.assertEqual(self.client.post(f'/api/v1/patients/{self.other_patient.id}/consultations/', {'occurred_at': (timezone.now() - timedelta(days=1)).isoformat()}, format='json').status_code, 404)
+
+    def test_strict_input_pagination_and_details(self):
+        endpoint = f'/api/v1/patients/{self.patient.id}/consultations/'
+        self.assertEqual(self.client.post(endpoint, {'occurred_at': '2026-01-01T10:00:00'}, format='json').status_code, 400)
+        self.assertEqual(self.client.post(endpoint, {'occurred_at': (timezone.now()-timedelta(days=1)).isoformat(), 'unexpected': True}, format='json').status_code, 400)
+        item = self.consultation()
+        measure = self.client.post(f"/api/v1/consultations/{item['id']}/measurements/", {'weight_kg': '70.00'}, format='json').json()
+        self.assertEqual(self.client.post(f"/api/v1/consultations/{item['id']}/measurements/", {'weight_kg': 70}, format='json').status_code, 400)
+        self.assertEqual(self.client.get(endpoint + '?page=1&page_size=1').json()['count'], 1)
+        self.assertEqual(self.client.get(f"/api/v1/consultations/{item['id']}/").status_code, 200)
+        self.assertEqual(self.client.get(f"/api/v1/measurements/{measure['id']}/").status_code, 200)
 
     def test_missing_weight_is_not_skipped(self):
         first = self.consultation(days=3)

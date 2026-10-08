@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from .models import Consultation, Measurement, ManualNote
 from .serializers import ConsultationSerializer, MeasurementSerializer, ManualNoteSerializer
 from patients.models import Patient
@@ -17,6 +18,11 @@ def patient_for(user, patient_id):
 def consultation_for(user, consultation_id):
     return Consultation.objects.select_related('patient').filter(id=consultation_id, patient__owner=user).first()
 
+def paged(request, queryset, serializer):
+    pager = PageNumberPagination(); pager.page_size = 20; pager.page_size_query_param = 'page_size'; pager.max_page_size = 100
+    page = pager.paginate_queryset(queryset, request)
+    return pager.get_paginated_response(serializer(page, many=True).data)
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -24,7 +30,7 @@ def consultations(request, patient_id):
     patient = patient_for(request.user, patient_id)
     if not patient: return Response(status=status.HTTP_404_NOT_FOUND)
     if request.method == 'GET':
-        return Response(ConsultationSerializer(Consultation.objects.filter(patient=patient), many=True).data)
+        return paged(request, Consultation.objects.filter(patient=patient), ConsultationSerializer)
     serializer = ConsultationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     return Response(ConsultationSerializer(serializer.save(patient=patient)).data, status=status.HTTP_201_CREATED)
@@ -36,7 +42,7 @@ def measurements(request, consultation_id):
     consultation = consultation_for(request.user, consultation_id)
     if not consultation: return Response(status=status.HTTP_404_NOT_FOUND)
     if request.method == 'GET':
-        return Response(MeasurementSerializer(Measurement.objects.filter(consultation=consultation), many=True).data)
+        return paged(request, Measurement.objects.filter(consultation=consultation), MeasurementSerializer)
     serializer = MeasurementSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     try:
@@ -51,7 +57,7 @@ def measurements(request, consultation_id):
 def notes(request, consultation_id):
     consultation = consultation_for(request.user, consultation_id)
     if not consultation: return Response(status=404)
-    if request.method == 'GET': return Response(ManualNoteSerializer(consultation.notes.all(), many=True).data)
+    if request.method == 'GET': return paged(request, consultation.notes.all(), ManualNoteSerializer)
     serializer = ManualNoteSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     return Response(ManualNoteSerializer(serializer.save(consultation=consultation)).data, status=201)
@@ -63,7 +69,22 @@ def history(request, patient_id):
     patient = patient_for(request.user, patient_id)
     if not patient: return Response(status=404)
     rows = Consultation.objects.filter(patient=patient).select_related('measurement')
-    return Response([ConsultationSerializer(row).data | {'measurement': MeasurementSerializer(row.measurement).data if hasattr(row, 'measurement') else None} for row in rows])
+    pager = PageNumberPagination(); pager.page_size = 20; pager.page_size_query_param = 'page_size'; pager.max_page_size = 100
+    page = pager.paginate_queryset(rows, request)
+    values = [ConsultationSerializer(row).data | {'measurement': MeasurementSerializer(row.measurement).data if hasattr(row, 'measurement') else None} for row in page]
+    return pager.get_paginated_response(values)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def consultation_detail(request, consultation_id):
+    item = consultation_for(request.user, consultation_id)
+    return Response(ConsultationSerializer(item).data) if item else Response(status=404)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def measurement_detail(request, measurement_id):
+    item = Measurement.objects.select_related('consultation__patient').filter(id=measurement_id, consultation__patient__owner=request.user).first()
+    return Response(MeasurementSerializer(item).data) if item else Response(status=404)
 
 
 @api_view(['GET'])
