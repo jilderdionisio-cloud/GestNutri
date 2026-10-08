@@ -1,6 +1,6 @@
 # Instalación y conexión local
 
-Node compatible con Vite 7 (20.19+ o 22.12+); verificado con Node 24.18.0.
+Node 22.22.2+ (rama 22), 24.15+ (rama 24) o 26+ para las pruebas de componentes; verificado con Node 24.18.0.
 Desde frontend/:
 
 ```powershell
@@ -25,4 +25,4 @@ vite.config.js envía /api al backend local http://127.0.0.1:8000 con changeOrig
 
 No se usa VITE_API_BASE_URL: la guía establece proxy y mismo origen. No colocar secretos en variables VITE_*. Las credenciales se introducen en el formulario y no se persisten en storage ni archivos. Las cookies de sesión las administra Django; CSRF se mantiene en memoria y se renueva tras login o recarga.
 
-npm test ejecuta siete pruebas del adaptador/validaciones, sin DOM ni red real. La comprobación manual en navegador se registra en INTEGRACION_S1.md. Sin backend el modo API mostrará un error; se puede ejecutar el modo mock para trabajar sin dependencias.
+npm test ejecuta siete pruebas del adaptador/validaciones de Sprint 1 y cuatro de componentes de seguimiento Sprint 2 en jsdom, sin red real. npm run test:components ejecuta solo componentes. La comprobación manual en navegador se registra en INTEGRACION_S1.md. Sin backend el modo API mostrará un error; se puede ejecutar el modo mock para trabajar sin dependencias.
