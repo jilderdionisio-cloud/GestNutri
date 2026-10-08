@@ -41,3 +41,20 @@ class S3EndpointTests(TestCase):
         self.assertIn('consultation', response.json())
         self.assertFalse(Document.objects.filter(patient=self.patient).exists())
         self.assertFalse(AuditEvent.objects.filter(patient=self.patient, event='document.upload').exists())
+
+    def test_document_requires_matching_signature_without_write_or_audit(self):
+        path = f'/api/v1/patients/{self.patient.id}/documents/'
+        valid_files = (
+            ('fake.pdf', b'%PDF-1.4\nsynthetic', 'application/pdf'),
+            ('fake.jpg', b'\xff\xd8\xff\xe0synthetic', 'image/jpeg'),
+            ('fake.png', b'\x89PNG\r\n\x1a\nsynthetic', 'image/png'),
+        )
+        for filename, content, content_type in valid_files:
+            upload = SimpleUploadedFile(filename, content, content_type=content_type)
+            self.assertEqual(self.client.post(path, {'file': upload}, format='multipart').status_code, 201)
+        forged = SimpleUploadedFile('forged.pdf', b'not-a-pdf', content_type='application/pdf')
+        response = self.client.post(path, {'file': forged}, format='multipart')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('file', response.json())
+        self.assertEqual(Document.objects.filter(patient=self.patient).count(), 3)
+        self.assertEqual(AuditEvent.objects.filter(patient=self.patient, event='document.upload').count(), 3)

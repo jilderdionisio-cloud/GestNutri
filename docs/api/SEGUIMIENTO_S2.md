@@ -1,9 +1,9 @@
 # API v1 de seguimiento nutricional — propuesta de backend
 
-Estado: borrador para coordinación de #18 con Diana (#17, PR #21) y el
-orquestador. Las rutas de Sprint 2 descritas aquí todavía no están implementadas.
-Genny puede revisar el contrato; no debe presentar estos endpoints como disponibles.
-No cierra #18 ni autoriza migraciones o integración por sí solo.
+Estado: contrato histórico de coordinación para #18 con Diana (#17, PR #21) y el
+orquestador. Las rutas S2 y la extensión S3 se implementan en la candidata #34,
+pero todavía no están integradas en `develop`; este documento no es evidencia de
+integración ni cierra Issues por sí solo.
 
 Base de esta rama: `develop` integrado `ca9f976`. Conserva Sprint 1 sin cambios.
 Referencia de datos revisada: propuesta de Diana `25a094cc5fe1a3ac4d8c507d73a18c1647c54729`.

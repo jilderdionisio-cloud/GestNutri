@@ -35,6 +35,24 @@ def json_only(request):
     return request.content_type.split(';')[0] == 'application/json'
 
 
+DOCUMENT_SIGNATURES = {
+    'application/pdf': b'%PDF-',
+    'image/jpeg': b'\xff\xd8\xff',
+    'image/png': b'\x89PNG\r\n\x1a\n',
+}
+
+
+def valid_document_signature(uploaded):
+    expected = DOCUMENT_SIGNATURES.get(uploaded.content_type or '')
+    if expected is None:
+        return False
+    position = uploaded.tell()
+    try:
+        return uploaded.read(len(expected)).startswith(expected)
+    finally:
+        uploaded.seek(position)
+
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def consultations(request, patient_id):
@@ -131,6 +149,8 @@ def documents(request, patient_id):
         return Response(values)
     uploaded = request.FILES.get('file')
     if not uploaded: return Response({'file': ['Archivo requerido.']}, status=400)
+    if not valid_document_signature(uploaded):
+        return Response({'file': ['El contenido no coincide con un formato permitido.']}, status=400)
     consultation_id = request.data.get('consultation')
     if consultation_id:
         try:
