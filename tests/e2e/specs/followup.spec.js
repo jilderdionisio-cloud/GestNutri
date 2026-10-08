@@ -15,7 +15,7 @@ async function login(page, credentials) {
   await page.getByLabel('Usuario').fill(credentials.username);
   await page.getByLabel('Contraseña').fill(credentials.password);
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
-  await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pacientes', exact: true })).toBeVisible();
 }
 
 async function openFollowup(page) {
@@ -37,7 +37,7 @@ async function openFollowup(page) {
 
 async function returnToFollowupAfterReload(page) {
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pacientes', exact: true })).toBeVisible();
   await page.getByPlaceholder('Nombre, teléfono o correo').fill(patient.email);
   await page.getByRole('button', { name: `Ver expediente de ${patient.first_name} ${patient.last_name}` }).click();
   await page.getByRole('button', { name: 'Abrir seguimiento nutricional' }).click();
