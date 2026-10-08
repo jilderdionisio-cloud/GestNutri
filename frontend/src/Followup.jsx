@@ -9,6 +9,7 @@ export default function Followup({ patient, onBack, preview = false }) {
   const section = followupSections.find(item => item.id === sectionId);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [form, setForm] = useState({ occurred_at: '', consultation: '', weight_kg: '', kind: 'note', text: '', file: null });
   useEffect(() => { titleRef.current?.focus(); }, [sectionId]);
   function open(id) { setSectionId(id); setState('pending'); }
   useEffect(() => {
@@ -16,6 +17,16 @@ export default function Followup({ patient, onBack, preview = false }) {
     setState('loading'); setError('');
     client.followup(patient.id, sectionId).then(value => { setData(value); setState('ready'); }).catch(err => { setError(err.message); setState('error'); });
   }, [patient.id, sectionId]);
+  async function submit(event) {
+    event.preventDefault(); setError('');
+    try {
+      if (sectionId === 'consultations') await client.createConsultation(patient.id, form.occurred_at);
+      if (sectionId === 'measurements') await client.createMeasurement(form.consultation, form.weight_kg);
+      if (sectionId === 'notes') await client.createNote(form.consultation, form.kind, form.text);
+      if (sectionId === 'documents') await client.uploadDocument(patient.id, form.file, form.consultation);
+      open('history');
+    } catch (err) { setError(err.data ? JSON.stringify(err.data) : err.message); setState('error'); }
+  }
   return <section className="followup" aria-label="Seguimiento nutricional">
     <div className="patient-context"><div><p className="eyebrow">PACIENTE SELECCIONADO</p><h2>{patientName(patient)}</h2><p>Seguimiento nutricional · Sprint 2</p></div><button onClick={onBack}>Volver al expediente</button></div>
     <p className="contract-notice" role="status">{apiMode ? 'Conectado a la API autenticada de seguimiento.' : 'Demostración local sin persistencia.'}</p>
@@ -28,6 +39,14 @@ export default function Followup({ patient, onBack, preview = false }) {
       {state === 'validation' && <p className="error" role="alert">Ejemplo visual: revisa los datos indicados antes de guardar. Los mensajes por campo se incorporarán con las reglas aprobadas.</p>}
       {state === 'pending' && <div className="empty"><h4>Preparada para recibir el contrato</h4><p>No hay campos, unidades, fechas ni registros de Sprint 2 definidos en el frontend.</p></div>}
       {state === 'ready' && <pre aria-label="Respuesta de seguimiento">{JSON.stringify(data, null, 2)}</pre>}
+      {apiMode && ['consultations', 'measurements', 'notes', 'documents'].includes(sectionId) && <form onSubmit={submit} className="form-grid" noValidate>
+        {sectionId === 'consultations' && <label>Fecha con zona horaria<input required type="datetime-local" value={form.occurred_at} onChange={e => setForm({...form, occurred_at: new Date(e.target.value).toISOString()})}/></label>}
+        {sectionId !== 'consultations' && <label>ID de consulta<input required value={form.consultation} onChange={e => setForm({...form, consultation: e.target.value})}/></label>}
+        {sectionId === 'measurements' && <label>Peso kg<input required value={form.weight_kg} onChange={e => setForm({...form, weight_kg: e.target.value})}/></label>}
+        {sectionId === 'notes' && <><label>Tipo<select value={form.kind} onChange={e => setForm({...form, kind:e.target.value})}><option value="note">Nota</option><option value="preference">Preferencia</option><option value="restriction">Restricción</option></select></label><label>Texto<textarea required value={form.text} onChange={e => setForm({...form,text:e.target.value})}/></label></>}
+        {sectionId === 'documents' && <label>Archivo<input required type="file" accept="application/pdf,image/jpeg,image/png" onChange={e => setForm({...form,file:e.target.files[0]})}/></label>}
+        <button className="primary">Guardar</button>
+      </form>}
       <p id="followup-dependency" className="dependency">Registro y edición pendientes de contrato API y migraciones disponibles. Resumen y documentos requieren además definición explícita de su alcance.</p>
     </div>
   </section>;
