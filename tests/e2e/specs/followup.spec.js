@@ -105,7 +105,7 @@ test('recorrido API real y aislamiento entre dos propietarios', async ({ page })
   expect((await download).suggestedFilename()).toBe('qa-e2e.pdf');
 
   await returnToFollowupAfterReload(page);
-  await page.getByRole('button', { name: 'Historial' }).click();
+  // History is the default section after reload; wait for its real API response.
   await expect(page.getByLabel('Respuesta de seguimiento')).toContainText(consultation.id);
 
   await page.getByRole('button', { name: 'Salir' }).click();
