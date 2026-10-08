@@ -1,0 +1,15 @@
+export const followupSections = [
+  { id: 'consultations', title: 'Consultas', description: 'Registro de consultas del paciente.', action: 'Registrar consulta', empty: 'No hay consultas para mostrar.' },
+  { id: 'measurements', title: 'Mediciones', description: 'Registro de mediciones asociado a una consulta.', action: 'Registrar medición', empty: 'No hay mediciones para mostrar.' },
+  { id: 'history', title: 'Historial', description: 'Consulta del historial según el orden publicado por backend.', empty: 'El historial todavía no tiene registros.' },
+  { id: 'evolution', title: 'Evolución', description: 'Comparación servida por backend, sin cálculos locales.', empty: 'No hay resultados de evolución para mostrar.' },
+  { id: 'notes', title: 'Notas manuales', description: 'Notas, preferencias y restricciones vinculadas al seguimiento.', action: 'Agregar nota manual', empty: 'No hay notas manuales para mostrar.' },
+];
+// Estados de presentación, no estados ni respuestas del contrato API de Sprint 2.
+export const previewStates = [
+  { id: 'pending', label: 'Contrato pendiente' },
+  { id: 'loading', label: 'Carga' },
+  { id: 'empty', label: 'Vacío' },
+  { id: 'error', label: 'Error' },
+  { id: 'validation', label: 'Validación' },
+];
