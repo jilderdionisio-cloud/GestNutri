@@ -8,9 +8,9 @@
 /backend/ @lortizbaeza-gif @dianabojorquezcetina-max
 /docs/api/ @lortizbaeza-gif @dianabojorquezcetina-max
 
-/database/ @dianabojorquezcetina-max
-/backend/**/migrations/ @dianabojorquezcetina-max
-/docs/data/ @dianabojorquezcetina-max
+/database/ @dianabojorquezcetina-max @jilderdionisio-cloud @lortizbaeza-gif
+/backend/**/migrations/ @dianabojorquezcetina-max @jilderdionisio-cloud @lortizbaeza-gif
+/docs/data/ @dianabojorquezcetina-max @jilderdionisio-cloud @lortizbaeza-gif
 
 /tests/ @jilderdionisio-cloud
 /.github/ @jilderdionisio-cloud
