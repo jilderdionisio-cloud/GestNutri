@@ -90,6 +90,20 @@ class FollowupApiTests(TestCase):
         self.assertFalse(ManualNote.objects.filter(consultation_id=consultation['id']).exists())
         self.assertFalse(AuditEvent.objects.filter(patient=self.patient, event='note.create').exists())
 
+    def test_notes_support_all_kinds_reject_2001_characters_and_keep_history_order(self):
+        consultation = self.consultation()
+        endpoint = f"/api/v1/consultations/{consultation['id']}/notes/"
+        created = []
+        for kind, text in (('note', 'Primera nota'), ('preference', 'Sin azúcar'), ('restriction', 'Sin frutos secos')):
+            response = self.client.post(endpoint, {'kind': kind, 'text': text}, format='json')
+            self.assertEqual(response.status_code, 201)
+            created.append(response.json())
+        self.assertEqual(self.client.post(endpoint, {'kind': 'note', 'text': 'x' * 2001}, format='json').status_code, 400)
+        listed = self.client.get(endpoint).json()['results']
+        expected_ids = [str(note_id) for note_id in ManualNote.objects.filter(consultation_id=consultation['id']).order_by('created_at', 'id').values_list('id', flat=True)]
+        self.assertEqual([item['id'] for item in listed], expected_ids)
+        self.assertEqual({item['kind'] for item in listed}, {'note', 'preference', 'restriction'})
+
     def test_invalid_data_is_defensive_for_corrupt_persisted_weight(self):
         current = SimpleNamespace(id=self.patient.id, patient=self.patient,
                                   measurement=SimpleNamespace(weight_kg=Decimal('NaN')))

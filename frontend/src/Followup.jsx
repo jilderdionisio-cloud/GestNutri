@@ -14,6 +14,7 @@ export default function Followup({ patient, onBack, preview = false }) {
   const [refresh, setRefresh] = useState(0);
   useEffect(() => { titleRef.current?.focus(); }, [sectionId]);
   function open(id) { setSectionId(id); setState('pending'); }
+  function retry() { setState('pending'); setRefresh(value => value + 1); }
   useEffect(() => {
     if (!apiMode || !['history', 'summary', 'documents'].includes(sectionId)) return;
     setState('loading'); setError('');
@@ -24,14 +25,15 @@ export default function Followup({ patient, onBack, preview = false }) {
     setState('loading'); setError('');
     client.evolution(form.consultation).then(value => { setData(value); setState('ready'); }).catch(err => { setError(err.message); setState('error'); });
   }, [sectionId, form.consultation, refresh]);
-  useEffect(() => { if (apiMode) client.followup(patient.id, 'consultations').then(value => setConsultations(value.results || [])).catch(() => {}); }, [patient.id]);
+  useEffect(() => { if (apiMode) client.followup(patient.id, 'consultations').then(value => setConsultations(value.results || [])).catch(() => {}); }, [patient.id, refresh]);
   async function submit(event) {
     event.preventDefault(); setError('');
     try {
-      if (sectionId === 'consultations') await client.createConsultation(patient.id, form.occurred_at);
+      const consultation = sectionId === 'consultations' ? await client.createConsultation(patient.id, form.occurred_at) : null;
       if (sectionId === 'measurements') await client.createMeasurement(form.consultation, form.weight_kg);
       if (sectionId === 'notes') await client.createNote(form.consultation, form.kind, form.text);
       if (sectionId === 'documents') await client.uploadDocument(patient.id, form.file, form.consultation);
+      if (consultation?.id) setForm(value => ({...value, consultation: consultation.id}));
       setRefresh(value => value + 1); open('history');
     } catch (err) { setError(err.data ? JSON.stringify(err.data) : err.message); setState('error'); }
   }
@@ -43,7 +45,7 @@ export default function Followup({ patient, onBack, preview = false }) {
     <div className="followup-content" aria-busy={state === 'loading'}><div className="title"><div><h3 ref={titleRef} tabIndex="-1">{section.title}</h3><p>{section.description}</p></div>{section.action && <button className="primary" disabled aria-describedby="followup-dependency">{section.action}</button>}</div>
       {state === 'loading' && <p role="status">Cargando {section.title.toLocaleLowerCase()}…</p>}
       {state === 'empty' && <div className="empty" role="status"><h4>{section.empty}</h4><p>La representación final de registros y valores ausentes depende del contrato.</p></div>}
-      {state === 'error' && <div className="error" role="alert"><p>{error || 'No se pudo cargar esta sección. Error de presentación simulado.'}</p><button onClick={() => open(sectionId)}>{apiMode ? 'Reintentar' : 'Restablecer vista previa'}</button></div>}
+      {state === 'error' && <div className="error" role="alert"><p>{error || 'No se pudo cargar esta sección. Error de presentación simulado.'}</p><button onClick={apiMode ? retry : () => open(sectionId)}>{apiMode ? 'Reintentar' : 'Restablecer vista previa'}</button></div>}
       {state === 'validation' && <p className="error" role="alert">Ejemplo visual: revisa los datos indicados antes de guardar. Los mensajes por campo se incorporarán con las reglas aprobadas.</p>}
       {state === 'pending' && <div className="empty"><h4>Preparada para recibir el contrato</h4><p>No hay campos, unidades, fechas ni registros de Sprint 2 definidos en el frontend.</p></div>}
       {state === 'ready' && <pre aria-label="Respuesta de seguimiento">{JSON.stringify(data, null, 2)}</pre>}
