@@ -4,6 +4,7 @@ export const followupSections = [
   { id: 'history', title: 'Historial', description: 'Consulta del historial según el orden publicado por backend.', empty: 'El historial todavía no tiene registros.' },
   { id: 'evolution', title: 'Evolución', description: 'Comparación servida por backend, sin cálculos locales.', empty: 'No hay resultados de evolución para mostrar.' },
   { id: 'summary', title: 'Resumen', description: 'Resumen del seguimiento pendiente de definición en el contrato.', empty: 'No hay un resumen disponible.' },
+  { id: 'formalization', title: 'Formalización de notas', description: 'IA pendiente de proveedor y contrato aprobado. La captura manual se conserva en Notas manuales.', action: 'Formalizar nota', empty: 'No hay una formalización disponible.' },
   { id: 'documents', title: 'Documentos', description: 'Documentos del seguimiento pendientes de contrato y disponibilidad del backend.', action: 'Agregar documento', empty: 'No hay documentos para mostrar.' },
   { id: 'notes', title: 'Notas manuales', description: 'Notas, preferencias y restricciones vinculadas al seguimiento.', action: 'Agregar nota manual', empty: 'No hay notas manuales para mostrar.' },
 ];

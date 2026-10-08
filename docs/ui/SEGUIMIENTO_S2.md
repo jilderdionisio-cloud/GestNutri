@@ -45,3 +45,15 @@ Se mantienen las cinco vistas originales y se agregan Resumen y Documentos como 
 Revisión de #24: relaciones en URL sin body adicional, peso textual sin conversión a float, paginación/orden de backend, seis estados de evolución sin cálculos locales, escritura mínima POST y no edición PATCH Sprint 2. Son pautas para la integración futura, no operaciones habilitadas. Esperar confirmación y SHA real de API/modelo/migración. Preservar adaptador y autenticación Sprint 1.
 
 Después de la entrega de backend: integrar flujo real y vistas de resumen/documentos únicamente con su contrato publicado; conservar cookies incluidas, token CSRF rotado y recuperación de sesión, validaciones servidor, errores por campo, carga/vacío/error, permisos por propietario y evidencia de persistencia. La disponibilidad futura no queda asumida ni la tarea completada por estos paneles.
+
+## Contrato confirmado y entrega técnica disponible
+
+El responsable temporal de datos confirmó #21/#24 en issue #18, manteniendo la propuesta de Diana sin atribuirle una confirmación nueva. Se preparan solo los controles acordados: occurred_at (ISO 8601 con zona), weight_kg (cadena decimal en kg) y kind/text de notas manuales. Son controles deshabilitados; no escriben ni llaman endpoints. Validaciones de orientación centralizadas en followup-contract.js, sin float, redondeo ni cálculos de evolución. El servidor sigue siendo autoridad.
+
+Las ramas nuevas codex/s2-followup-reconciled (#32) y codex/s2-s3-features (#34, f00450ae450d97bbcad32c1887a6aac373d31c85) contienen implementación/migraciones. La inspección de followup/views.py encontró que consultations, measurements, notes e history devuelven arrays sin paginación, pero el contrato acordado en SEGUIMIENTO_S2.md exige count/next/previous/results. El frontend no oculta esta discrepancia ni inventa un envelope: la comprobación de contrato rechaza listas incompatibles. La conexión real espera corrección del backend o una revisión explícita del contrato publicada por sus responsables. No se afirman pruebas reales S2 sobre estas ramas.
+
+Sprint 3: issues #25/#26/#27 especifican formalización con fallback manual, resumen y documentos, pero siguen pendientes los contratos finales de rutas, respuestas, proveedor/consentimiento y almacenamiento/retención/tipo/tamaño. La rama #34 contiene código inicial de documentos sin contrato API S3 publicado en docs/api/. Se añade únicamente una sección visual Formalización de notas, sin enviar contenido a IA ni inferir metadatos de documentos desde modelos. Captura manual sigue disponible en la preparación de Notas manuales; no es una prueba de escritura real S2.
+
+PR #35 modifica exclusivamente CODEOWNERS para revisión temporal de datos; sus cambios no se mezclan con la rama frontend. No se fusiona ninguna PR ni se declara completa #19/#27.
+
+Verificación de esta actualización: 15 pruebas aprobadas (10 de adaptadores/contrato y 5 de componentes), build correcto y git diff --check sin errores. No se realizó ni se afirma integración real S2/S3.

@@ -15,10 +15,10 @@ describe('seguimiento pendiente de contrato', () => {
   await user.click(screen.getByRole('button', { name: 'Volver al expediente' }));
   expect(onBack).toHaveBeenCalledOnce();
  });
- it('navega entre las siete vistas sin solicitudes ni escritura y mueve el foco', async () => {
+ it('navega entre las ocho vistas sin solicitudes ni escritura y mueve el foco', async () => {
   const user=userEvent.setup(); const fetcher=vi.fn(); vi.stubGlobal('fetch',fetcher);
   render(<Followup patient={patient} onBack={() => {}}/>);
-  for (const title of ['Consultas','Mediciones','Historial','Evolución','Resumen','Documentos','Notas manuales']) {
+  for (const title of ['Consultas','Mediciones','Historial','Evolución','Resumen','Formalización de notas','Documentos','Notas manuales']) {
    await user.click(screen.getByRole('button',{name:title,exact:true}));
    const heading=screen.getByRole('heading',{name:title,exact:true});
    expect(document.activeElement).toBe(heading);
@@ -52,4 +52,15 @@ describe('seguimiento pendiente de contrato', () => {
   expect(screen.getByRole('heading',{name:'Otra Persona ficticia'})).toBeTruthy();
   expect(screen.getByRole('button',{name:'Historial',exact:true}).getAttribute('aria-current')).toBe('page');
  });
+ it('muestra solo los campos confirmados de consulta, peso y nota, todos bloqueados', async () => {
+  const user=userEvent.setup(); render(<Followup patient={patient} onBack={() => {}}/>);
+  for (const [section,names] of [['Consultas',['occurred_at']],['Mediciones',['weight_kg']],['Notas manuales',['kind','text']]]) {
+   await user.click(screen.getByRole('button',{name:section,exact:true}));
+   const form=screen.getByRole('form',{name:'Formulario acordado pendiente de API'});
+   const controls=[...form.querySelectorAll('input,textarea,select')];
+   expect(controls.map(control => control.name)).toEqual(names);
+   expect(controls.every(control => control.matches(':disabled'))).toBe(true);
+  }
+ });
+
 });
