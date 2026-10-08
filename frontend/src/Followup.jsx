@@ -18,7 +18,10 @@ export default function Followup({ patient, onBack, preview = false }) {
   useEffect(() => {
     if (!apiMode || !['history', 'summary', 'documents'].includes(sectionId)) return;
     setState('loading'); setError('');
-    client.followup(patient.id, sectionId).then(value => { setData(value); setState('ready'); }).catch(err => { setError(err.message); setState('error'); });
+    client.followup(patient.id, sectionId).then(value => {
+      setData(value);
+      setState(Array.isArray(value?.results) && value.results.length === 0 ? 'empty' : 'ready');
+    }).catch(err => { setError(err.message); setState('error'); });
   }, [patient.id, sectionId, refresh]);
   useEffect(() => {
     if (!apiMode || sectionId !== 'evolution' || !form.consultation) return;
@@ -44,7 +47,9 @@ export default function Followup({ patient, onBack, preview = false }) {
     {preview && <details className="state-preview"><summary>Vista previa de estados · sin datos clínicos</summary><label>Estado visual<select value={state} onChange={event => setState(event.target.value)}>{previewStates.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label><p>Estos estados son ejemplos de presentación; no representan respuestas reales de Sprint 2.</p></details>}
     <div className="followup-content" aria-busy={state === 'loading'}><div className="title"><div><h3 ref={titleRef} tabIndex="-1">{section.title}</h3><p>{section.description}</p></div>{section.action && <button className="primary" disabled aria-describedby="followup-dependency">{section.action}</button>}</div>
       {state === 'loading' && <p role="status">Cargando {section.title.toLocaleLowerCase()}…</p>}
-      {state === 'empty' && <div className="empty" role="status"><h4>{section.empty}</h4><p>La representación final de registros y valores ausentes depende del contrato.</p></div>}
+      {state === 'empty' && <div className="empty" role="status">
+        {apiMode && sectionId === 'history' ? <><h4>Este paciente aún no tiene consultas.</h4><p>Registra la primera consulta para iniciar su historial de seguimiento.</p><button className="primary" onClick={() => open('consultations')}>Crear primera consulta</button></> : <><h4>{section.empty}</h4><p>La representación final de registros y valores ausentes depende del contrato.</p></>}
+      </div>}
       {state === 'error' && <div className="error" role="alert"><p>{error || 'No se pudo cargar esta sección. Error de presentación simulado.'}</p><button onClick={apiMode ? retry : () => open(sectionId)}>{apiMode ? 'Reintentar' : 'Restablecer vista previa'}</button></div>}
       {state === 'validation' && <p className="error" role="alert">Ejemplo visual: revisa los datos indicados antes de guardar. Los mensajes por campo se incorporarán con las reglas aprobadas.</p>}
       {state === 'pending' && <div className="empty"><h4>Preparada para recibir el contrato</h4><p>No hay campos, unidades, fechas ni registros de Sprint 2 definidos en el frontend.</p></div>}
