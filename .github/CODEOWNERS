@@ -12,10 +12,10 @@
 /backend/**/migrations/ @dianabojorquezcetina-max @jilderdionisio-cloud @lortizbaeza-gif
 /docs/data/ @dianabojorquezcetina-max @jilderdionisio-cloud @lortizbaeza-gif
 
-/tests/ @jilderdionisio-cloud
-/.github/ @jilderdionisio-cloud
+/tests/ @jilderdionisio-cloud @gennynavarrete
+/.github/ @jilderdionisio-cloud @gennynavarrete
 /docs/qa/ @jilderdionisio-cloud @gennynavarrete
 
 # Políticas y contratos: revisión obligatoria por el orquestador humano/agente.
 /docs/GOBIERNO_REPOSITORIO.md @jilderdionisio-cloud
-/docs/CONTRATOS/ @jilderdionisio-cloud
+/docs/CONTRATOS/ @jilderdionisio-cloud @gennynavarrete
