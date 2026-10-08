@@ -34,5 +34,11 @@ export function createApiClient(fetcher = fetch) {
       const body = Object.fromEntries(fields.map(f => [f.key, f.key === 'birth_date' ? values[f.key] || null : (values[f.key] ?? '').trim()]));
       return api(id ? `patients/${encodeURIComponent(id)}/` : 'patients/', { method: id ? 'PATCH' : 'POST', body });
     },
+    followup(patientId, section) { return api(`patients/${encodeURIComponent(patientId)}/${section}/`); },
+    createConsultation(patientId, occurred_at) { return api(`patients/${encodeURIComponent(patientId)}/consultations/`, { method: 'POST', body: { occurred_at } }); },
+    uploadDocument(patientId, file, consultation) {
+      return fetcher(`/api/v1/patients/${encodeURIComponent(patientId)}/documents/`, { method: 'POST', credentials: 'include', headers: { 'X-CSRFToken': csrfToken }, body: (() => { const form = new FormData(); form.append('file', file); if (consultation) form.append('consultation', consultation); return form; })() }).then(async response => { const data = await response.json().catch(() => null); if (!response.ok) throw Object.assign(new Error(data?.detail || 'No se pudo cargar el documento.'), { status: response.status, data }); return data; });
+    },
+    documentDownload(id) { return `/api/v1/documents/${encodeURIComponent(id)}/download/`; },
   };
 }
