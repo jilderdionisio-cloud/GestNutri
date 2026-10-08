@@ -11,13 +11,14 @@ export default function Followup({ patient, onBack, preview = false }) {
   const [error, setError] = useState('');
   const [form, setForm] = useState({ occurred_at: '', consultation: '', weight_kg: '', kind: 'note', text: '', file: null });
   const [consultations, setConsultations] = useState([]);
+  const [refresh, setRefresh] = useState(0);
   useEffect(() => { titleRef.current?.focus(); }, [sectionId]);
   function open(id) { setSectionId(id); setState('pending'); }
   useEffect(() => {
     if (!apiMode || !['history', 'summary', 'documents'].includes(sectionId)) return;
     setState('loading'); setError('');
     client.followup(patient.id, sectionId).then(value => { setData(value); setState('ready'); }).catch(err => { setError(err.message); setState('error'); });
-  }, [patient.id, sectionId]);
+  }, [patient.id, sectionId, refresh]);
   useEffect(() => { if (apiMode) client.followup(patient.id, 'consultations').then(value => setConsultations(value.results || [])).catch(() => {}); }, [patient.id]);
   async function submit(event) {
     event.preventDefault(); setError('');
@@ -26,7 +27,7 @@ export default function Followup({ patient, onBack, preview = false }) {
       if (sectionId === 'measurements') await client.createMeasurement(form.consultation, form.weight_kg);
       if (sectionId === 'notes') await client.createNote(form.consultation, form.kind, form.text);
       if (sectionId === 'documents') await client.uploadDocument(patient.id, form.file, form.consultation);
-      open('history');
+      setRefresh(value => value + 1); open('history');
     } catch (err) { setError(err.data ? JSON.stringify(err.data) : err.message); setState('error'); }
   }
   return <section className="followup" aria-label="Seguimiento nutricional">
