@@ -60,6 +60,12 @@ class FollowupApiTests(TestCase):
         self.assertEqual(self.client.get(endpoint + '?page=1&page_size=1').json()['count'], 1)
         self.assertEqual(self.client.get(f"/api/v1/consultations/{item['id']}/").status_code, 200)
         self.assertEqual(self.client.get(f"/api/v1/measurements/{measure['id']}/").status_code, 200)
+        note = self.client.post(f"/api/v1/consultations/{item['id']}/notes/", {'kind': 'note', 'text': 'X'}, format='json').json()
+        self.assertEqual(self.client.get(f"/api/v1/notes/{note['id']}/").status_code, 200)
+        self.assertEqual(self.client.get(endpoint + '?page=bad').status_code, 400)
+        self.assertEqual(self.client.get(endpoint + '?page_size=0').status_code, 400)
+        self.assertEqual(self.client.post(endpoint, {'occurred_at': '2026-01-01T00:00:00Z'}, format='multipart').status_code, 415)
+        self.assertEqual(self.client.post(f"/api/v1/consultations/{item['id']}/measurements/", {'weight_kg': '7e1'}, format='json').status_code, 400)
 
     def test_missing_weight_is_not_skipped(self):
         first = self.consultation(days=3)

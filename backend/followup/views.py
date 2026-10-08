@@ -20,6 +20,9 @@ def consultation_for(user, consultation_id):
     return Consultation.objects.select_related('patient').filter(id=consultation_id, patient__owner=user).first()
 
 def paged(request, queryset, serializer):
+    for key in ('page', 'page_size'):
+        if key in request.query_params and (not request.query_params[key].isdigit() or int(request.query_params[key]) < 1):
+            return Response({key: ['Parámetro de paginación inválido.']}, status=400)
     pager = PageNumberPagination(); pager.page_size = 20; pager.page_size_query_param = 'page_size'; pager.max_page_size = 100
     page = pager.paginate_queryset(queryset, request)
     return pager.get_paginated_response(serializer(page, many=True).data)
@@ -27,12 +30,16 @@ def paged(request, queryset, serializer):
 def audit(request, patient, event, outcome='success'):
     AuditEvent.objects.create(actor=request.user, patient=patient, event=event, outcome=outcome)
 
+def json_only(request):
+    return request.content_type.split(';')[0] == 'application/json'
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def consultations(request, patient_id):
     patient = patient_for(request.user, patient_id)
     if not patient: return Response(status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'POST' and not json_only(request): return Response(status=415)
     if request.method == 'GET':
         return paged(request, Consultation.objects.filter(patient=patient), ConsultationSerializer)
     serializer = ConsultationSerializer(data=request.data)
@@ -46,6 +53,7 @@ def consultations(request, patient_id):
 def measurements(request, consultation_id):
     consultation = consultation_for(request.user, consultation_id)
     if not consultation: return Response(status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'POST' and not json_only(request): return Response(status=415)
     if request.method == 'GET':
         return paged(request, Measurement.objects.filter(consultation=consultation), MeasurementSerializer)
     serializer = MeasurementSerializer(data=request.data)
@@ -63,6 +71,7 @@ def measurements(request, consultation_id):
 def notes(request, consultation_id):
     consultation = consultation_for(request.user, consultation_id)
     if not consultation: return Response(status=404)
+    if request.method == 'POST' and not json_only(request): return Response(status=415)
     if request.method == 'GET': return paged(request, consultation.notes.all(), ManualNoteSerializer)
     serializer = ManualNoteSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -92,6 +101,12 @@ def consultation_detail(request, consultation_id):
 def measurement_detail(request, measurement_id):
     item = Measurement.objects.select_related('consultation__patient').filter(id=measurement_id, consultation__patient__owner=request.user).first()
     return Response(MeasurementSerializer(item).data) if item else Response(status=404)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def note_detail(request, note_id):
+    item = ManualNote.objects.select_related('consultation__patient').filter(id=note_id, consultation__patient__owner=request.user).first()
+    return Response(ManualNoteSerializer(item).data) if item else Response(status=404)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

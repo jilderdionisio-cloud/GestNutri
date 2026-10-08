@@ -35,6 +35,8 @@ class MeasurementSerializer(serializers.ModelSerializer):
             if extra: raise serializers.ValidationError({key: ['Campo desconocido.'] for key in extra})
             if not isinstance(data.get('weight_kg'), str):
                 raise serializers.ValidationError({'weight_kg': ['Usa una cadena decimal exacta.']})
+            if not re.fullmatch(r'[0-9]+(?:\.[0-9]{1,2})?', data['weight_kg']):
+                raise serializers.ValidationError({'weight_kg': ['Formato decimal inválido.']})
         return super().to_internal_value(data)
 
 
