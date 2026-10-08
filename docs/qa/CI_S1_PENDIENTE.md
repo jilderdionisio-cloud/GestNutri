@@ -1,26 +1,32 @@
-# CI transitorio — Sprint 1
+# CI del código integrado — Sprint 1
 
-Este workflow valida código pendiente de integración sin fusionar las PR de
-producto. Se ejecuta desde una PR de QA hacia `develop`, pero obtiene fuentes
-fijadas en checkouts separados:
+El workflow conserva su ruta `.github/workflows/s1-pending-integration.yml`,
+pero ahora prueba el checkout normal del repositorio en cada job, sin SHA
+externos ni carpetas de fuentes separadas.
 
-| Capa | PR | Commit fijado | Comandos |
-| --- | --- | --- | --- |
-| Backend | #9 | `ef9356faaa0b46b69c44a95b65f8a941e1168dde` | `check`, `migrate --plan`, `migrate`, `showmigrations`, `makemigrations --check --dry-run`, `test accounts patients --noinput` |
-| Frontend | #11 | `afe5f4ce698dafb32918c40490321df158e42b67` | `npm ci`, `npm test`, `npm run build` |
+Se ejecuta en `pull_request` dirigido a `develop`, `push` a `develop` y
+`workflow_dispatch`. No usa filtros de rutas: los cambios de producto también
+activan la verificación. En una PR, `actions/checkout` comprueba por defecto
+el commit de combinación de GitHub; en push, el commit enviado; en ejecución
+manual, la referencia seleccionada.
 
-El backend utiliza un servicio PostgreSQL 17 efímero (`gestnutri_ci`) creado
-por GitHub Actions. Sus credenciales son de prueba, viven únicamente durante
-el job y no representan un secreto de despliegue.
+| Capa | Directorio | Comandos |
+| --- | --- | --- |
+| Backend | `backend/` | `check`, `migrate --plan`, `migrate --noinput`, `showmigrations`, `makemigrations --check --dry-run`, `test accounts patients --noinput` |
+| Frontend | `frontend/` | `npm ci`, `npm test`, `npm run build` |
 
-## Alcance y límites
+Backend conserva Python 3.13 y el servicio PostgreSQL 17 efímero existente,
+con comprobación de salud y variables de prueba. Las credenciales declaradas
+son exclusivas de la base desechable del job, sin secretos de despliegue.
+Frontend conserva Node 22 y cache npm sobre `frontend/package-lock.json`;
+cache pip apunta a `backend/requirements.txt`.
 
-- No fusiona, modifica ni prueba una combinación de ramas como si ya estuviera
-  integrada en `develop`.
-- No sustituye el E2E de navegador con `VITE_DATA_MODE=api` ni la revisión
-  humana.
-- No ejecuta una comprobación global de whitespace: los commits pendientes
-  heredan espacios finales en documentación ajena al código que se valida.
-- Cuando backend y frontend entren en una rama de integración real, reemplazar
-  los checkouts fijados por el checkout normal de esa rama y añadir el E2E.
-- La aprobación debe ser de un CODEOWNER independiente de quien abra la PR.
+Esta conversión parte de `develop` en
+`a255e23b1058a9e9b9731ffcb9d52b49a393400b`, que ya contiene ambas capas.
+Solo modifica el workflow y esta documentación. No modifica código de
+producto, contratos, pruebas funcionales ni CODEOWNERS.
+
+CI verde acredita estos comandos sobre el código integrado, sin sustituir
+E2E de navegador, revisión humana ni aprobación independiente del CODEOWNER.
+No se agrega una puerta global de whitespace heredado; `git diff --check`
+se ejecuta sobre los cambios de esta PR. No cierra Issues/PRs ni fusiona.
