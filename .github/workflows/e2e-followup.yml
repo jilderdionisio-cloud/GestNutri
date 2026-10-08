@@ -70,9 +70,8 @@ jobs:
             for attempt in {1..30}; do curl --fail --silent "$url" >/dev/null && break; sleep 1; done
             curl --fail --silent "$url" >/dev/null
           done
-          # The previously approved end-to-end journey stays preserved at a4a14e1.
-          # Run only the distinct mandatory gaps introduced by this revision.
-          npm test --prefix tests/e2e -- specs/remaining-mandatory.spec.js
+          # Run both suites on the corrected #34 base: approved journey plus distinct gaps.
+          npm test --prefix tests/e2e
           (cd backend && PYTHONPATH=. python ../tests/e2e/assert_audit.py)
       - name: Upload E2E evidence
         if: always()
