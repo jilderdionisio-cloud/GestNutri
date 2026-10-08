@@ -72,7 +72,7 @@ jobs:
           done
           # The previously approved end-to-end journey stays preserved at a4a14e1.
           # Run only the distinct mandatory gaps introduced by this revision.
-          npx --prefix tests/e2e playwright test specs/remaining-mandatory.spec.js
+          npm test --prefix tests/e2e -- specs/remaining-mandatory.spec.js
       - name: Upload E2E evidence
         if: always()
         uses: actions/upload-artifact@v4
