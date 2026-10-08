@@ -1,21 +1,20 @@
 # Reporte de defectos — Sprint 2 y Sprint 3
 
-## DEF-S2-API-001 — Las rutas S2 aceptan entradas que el contrato exige rechazar
+## DEF-S2-API-001 — Parcialmente resuelto: aún se aceptan transporte no JSON y notación exponencial
 
-- **Estado:** abierto; reproducido por QA el 2026-10-07.
-- **Versión:** PR #34 `f00450ae450d97bbcad32c1887a6aac373d31c85`.
-- **Entorno:** worktree aislado; Django 5.2.18/Python 3.13.14, SQLite temporal. Pendiente PostgreSQL.
-- **Pasos:** con sesión/CSRF válida, enviar: (a) consulta con `occurred_at` sin offset; (b) consulta o nota con clave extra `unexpected`; (c) medición `{ "weight_kg": 70.0 }` como número JSON.
-- **Resultado actual:** cada solicitud devuelve 201.
-- **Resultado esperado:** 400 sin escritura parcial: la fecha debe incluir zona, las claves desconocidas se rechazan y `weight_kg` debe ser cadena decimal conforme al contrato.
+- **Estado:** parcialmente resuelto; revisado en `c9b1a2965233b65b060ee6a30acceebf0a9e9a1d`.
+- **Correcciones verificadas:** fecha sin offset, claves desconocidas, peso número JSON y JSON malformado devuelven 400.
+- **Pasos pendientes:** con sesión válida, enviar consulta válida como `multipart/form-data`; enviar medición `{ "weight_kg": "7e1" }`.
+- **Resultado actual:** ambos devuelven 201.
+- **Resultado esperado:** 415 para tipo de contenido no JSON y 400 para notación exponencial; el contrato exige JSON estricto y cadena decimal sin exponente.
 
-## DEF-S2-API-002 — Historial sin paginación y faltan rutas de detalle comprometidas
+## DEF-S2-API-002 — Parcialmente resuelto: parámetros de paginación inválidos y detalle de nota pendientes
 
-- **Estado:** abierto; reproducido por QA el 2026-10-07.
-- **Versión:** PR #34 `f00450ae450d97bbcad32c1887a6aac373d31c85`.
-- **Pasos:** crear más de dos consultas, solicitar `GET /api/v1/patients/{id}/history/?page=1&page_size=2`; solicitar `GET /api/v1/consultations/{id}/` y `GET /api/v1/measurements/{id}/`.
-- **Resultado actual:** historial devuelve una lista simple completa (6 elementos en la prueba), ignora paginación; los detalles devuelven 404 porque las rutas no existen.
-- **Resultado esperado:** envoltura paginada acordada y rutas de detalle disponibles con autorización/404 para recursos ajenos.
+- **Estado:** parcialmente resuelto; revisado en `c9b1a2965233b65b060ee6a30acceebf0a9e9a1d`.
+- **Correcciones verificadas:** listas de consulta/medición/nota/historial devuelven envoltura paginada; historial conserva orden descendente; detalles de consulta/medición devuelven 200 al dueño y 404 al ajeno.
+- **Pasos pendientes:** solicitar historial con `page=abc`, `page=0`, `page_size=abc` o `page_size=-1`; solicitar `GET /api/v1/notes/{id}/` como dueño.
+- **Resultado actual:** páginas inválidas devuelven 404 o 200, en vez de 400; detalle de nota devuelve 404 aun al dueño porque la ruta no existe.
+- **Resultado esperado:** 400 para parámetros inválidos, 404 sólo para página inexistente/recurso ajeno, y detalle de nota autorizado.
 
 ## DEF-S2-API-003 — Resuelto en candidato: evolución incorpora el sexto estado `invalid_data`
 
