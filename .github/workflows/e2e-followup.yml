@@ -56,7 +56,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
           python manage.py migrate --noinput
-          python ../tests/e2e/seed_e2e.py
+          PYTHONPATH=. python ../tests/e2e/seed_e2e.py
       - name: Install frontend and Playwright
         run: |
           npm ci --prefix frontend
