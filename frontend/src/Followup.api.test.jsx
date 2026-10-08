@@ -40,6 +40,18 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('seguimiento conectado a API', () => {
+  it('muestra un estado vacío comprensible y permite crear la primera consulta', async () => {
+    const user = userEvent.setup();
+    api.followup.mockImplementation((_patientId, section) => followupResponse(section, []));
+    render(<Followup patient={patient} onBack={() => {}} />);
+
+    expect(await screen.findByText('Este paciente aún no tiene consultas.')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Crear primera consulta' }));
+
+    expect(screen.getByRole('heading', { name: 'Consultas', exact: true })).toBeTruthy();
+    expect(screen.getByLabelText('Fecha con zona horaria')).toBeTruthy();
+  });
+
   it('refresca y selecciona la consulta recién creada sin recargar la página', async () => {
     const user = userEvent.setup();
     let consultations = [initialConsultation];
