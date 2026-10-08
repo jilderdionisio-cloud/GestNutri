@@ -15,16 +15,19 @@ describe('seguimiento pendiente de contrato', () => {
   await user.click(screen.getByRole('button', { name: 'Volver al expediente' }));
   expect(onBack).toHaveBeenCalledOnce();
  });
- it('navega entre las cinco vistas sin solicitudes ni escritura y mueve el foco', async () => {
+ it('navega entre las siete vistas sin solicitudes ni escritura y mueve el foco', async () => {
   const user=userEvent.setup(); const fetcher=vi.fn(); vi.stubGlobal('fetch',fetcher);
   render(<Followup patient={patient} onBack={() => {}}/>);
-  for (const title of ['Consultas','Mediciones','Historial','Evolución','Notas manuales']) {
+  for (const title of ['Consultas','Mediciones','Historial','Evolución','Resumen','Documentos','Notas manuales']) {
    await user.click(screen.getByRole('button',{name:title,exact:true}));
    const heading=screen.getByRole('heading',{name:title,exact:true});
    expect(document.activeElement).toBe(heading);
    expect(screen.getByRole('button',{name:title,exact:true}).getAttribute('aria-current')).toBe('page');
   }
   expect(screen.getByRole('button',{name:'Agregar nota manual'}).disabled).toBe(true);
+  await user.click(screen.getByRole('button',{name:'Documentos',exact:true}));
+  expect(screen.getByRole('button',{name:'Agregar documento'}).disabled).toBe(true);
+  expect(document.querySelector('input[type=file]')).toBeNull();
   expect(screen.queryAllByRole('textbox')).toHaveLength(0);
   expect(fetcher).not.toHaveBeenCalled();
  });

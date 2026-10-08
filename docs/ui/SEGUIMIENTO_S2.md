@@ -13,7 +13,7 @@ En npm run dev se puede desplegar Vista previa de estados para inspeccionar carg
 ## Dependencias revisadas
 
 - Diana: docs/data/S2_CONTRATO_PROPUESTO.md en PR #21, commit 25a094cc5fe1a3ac4d8c507d73a18c1647c54729. El documento dice propuesta, no contrato aprobado.
-- Fernanda: issue #18, sin documentos API Sprint 2 ni endpoints publicados en las ramas disponibles al revisar. No hay acuerdo escrito en comentarios de #18/#21.
+- Fernanda: PR #24, docs/api/SEGUIMIENTO_S2.md, commit e6f4e133a839ce33abbdb7a0fad1319d99e4c3dc. Contrato propuesto revisado: GET/POST, sesión/CSRF de Sprint 1, relaciones desde URL, listas paginadas, peso como cadena decimal, seis estados de evolución y notas históricas. Aún no hay modelo, migración ni endpoints Sprint 2. No se conecta este borrador.
 
 La propuesta de Diana describe occurred_at, weight_kg y categorías/texto de notas, pero no se trasladan a controles editables ni modelos frontend hasta aprobación conjunta. Tampoco se adoptan sus estados de evolución como respuestas de API. No se interpreta la ausencia de comentarios como aprobación.
 
@@ -37,3 +37,11 @@ Pruebas de componentes: paciente/retorno, cinco secciones y foco, bloqueo de esc
 Entrega parcial en PR borrador; no cierra #19 ni declara integración API, E2E o CI del código Sprint 2 completos. El workflow transitorio actual usa fuentes fijas de Sprint 1 y no valida esta rama.
 
 Revisión manual del navegador (modo mock, solo estructura): acceso Sprint 1 → expediente → seguimiento → cinco secciones → carga/vacío/error/validación simulados → regreso al expediente del mismo paciente. Captura SEGUIMIENTO_S2.png. Esta revisión no acredita llamadas ni persistencia Sprint 2.
+
+## Actualización tras revisar PR #24
+
+Se mantienen las cinco vistas originales y se agregan Resumen y Documentos como estructura visual sin campos ni datos. Registro de documentos deshabilitado, sin selección/subida de archivos. Resumen/documentos no aparecen en el contrato propuesto de #24: deben ser definidos por Fernanda/Diana antes de añadir formatos, metadatos, rutas o respuestas. No se asume que sean entidades nuevas ni se deriva un resumen clínico local.
+
+Revisión de #24: relaciones en URL sin body adicional, peso textual sin conversión a float, paginación/orden de backend, seis estados de evolución sin cálculos locales, escritura mínima POST y no edición PATCH Sprint 2. Son pautas para la integración futura, no operaciones habilitadas. Esperar confirmación y SHA real de API/modelo/migración. Preservar adaptador y autenticación Sprint 1.
+
+Después de la entrega de backend: integrar flujo real y vistas de resumen/documentos únicamente con su contrato publicado; conservar cookies incluidas, token CSRF rotado y recuperación de sesión, validaciones servidor, errores por campo, carga/vacío/error, permisos por propietario y evidencia de persistencia. La disponibilidad futura no queda asumida ni la tarea completada por estos paneles.
