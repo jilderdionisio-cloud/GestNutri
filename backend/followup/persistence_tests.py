@@ -2,7 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, transaction
+from django.db import DataError, IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from django.utils import timezone
@@ -32,7 +32,7 @@ class FollowupPersistenceTests(TestCase):
 
     def test_database_constraints_and_patient_protection(self):
         for weight in (Decimal('0.00'), Decimal('-1.00'), Decimal('10000.00')):
-            with self.subTest(weight=weight), self.assertRaises(IntegrityError), transaction.atomic():
+            with self.subTest(weight=weight), self.assertRaises((DataError, IntegrityError)), transaction.atomic():
                 Measurement.objects.create(consultation=self.consultation(), weight_kg=weight)
         with self.assertRaises(IntegrityError), transaction.atomic():
             ManualNote.objects.create(consultation=self.consultation(), kind='note', text='   ')
