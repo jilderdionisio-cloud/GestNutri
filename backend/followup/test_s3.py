@@ -32,3 +32,12 @@ class S3EndpointTests(TestCase):
         self.client.force_authenticate(self.other)
         self.assertEqual(self.client.get(f'/api/v1/patients/{self.patient.id}/documents/').status_code, 404)
         self.assertEqual(self.client.get(f'/api/v1/documents/{document.id}/download/').status_code, 404)
+
+    def test_document_invalid_consultation_uuid_is_400_without_write(self):
+        path = f'/api/v1/patients/{self.patient.id}/documents/'
+        upload = SimpleUploadedFile('fake.pdf', b'%PDF-fake', content_type='application/pdf')
+        response = self.client.post(path, {'file': upload, 'consultation': 'not-a-uuid'}, format='multipart')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('consultation', response.json())
+        self.assertFalse(Document.objects.filter(patient=self.patient).exists())
+        self.assertFalse(AuditEvent.objects.filter(patient=self.patient, event='document.upload').exists())

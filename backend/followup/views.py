@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import UUID
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
 from rest_framework import status
@@ -131,6 +132,11 @@ def documents(request, patient_id):
     uploaded = request.FILES.get('file')
     if not uploaded: return Response({'file': ['Archivo requerido.']}, status=400)
     consultation_id = request.data.get('consultation')
+    if consultation_id:
+        try:
+            UUID(str(consultation_id))
+        except (TypeError, ValueError, AttributeError):
+            return Response({'consultation': ['UUID inválido.']}, status=400)
     consultation = consultation_for(request.user, consultation_id) if consultation_id else None
     if consultation_id and (not consultation or consultation.patient_id != patient.id): return Response({'consultation': ['Consulta inválida.']}, status=400)
     item = Document(patient=patient, consultation=consultation, file=uploaded, original_name=uploaded.name, content_type=uploaded.content_type or '', size_bytes=uploaded.size)

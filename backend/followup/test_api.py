@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from patients.models import Patient
+from .models import AuditEvent, ManualNote
 from .views import evolution
 
 
@@ -78,6 +79,16 @@ class FollowupApiTests(TestCase):
         self.client.post(f"/api/v1/consultations/{last['id']}/measurements/", {'weight_kg': '71.00'}, format='json')
         self.assertEqual(self.client.get(f"/api/v1/consultations/{middle['id']}/evolution/").json()['status'], 'insufficient_data')
         self.assertEqual(self.client.get(f"/api/v1/consultations/{last['id']}/evolution/").json()['status'], 'insufficient_data')
+
+    def test_note_text_requires_a_string_without_writes_or_audit(self):
+        consultation = self.consultation()
+        endpoint = f"/api/v1/consultations/{consultation['id']}/notes/"
+        for invalid_text in (123, True, [], None):
+            response = self.client.post(endpoint, {'kind': 'note', 'text': invalid_text}, format='json')
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('text', response.json())
+        self.assertFalse(ManualNote.objects.filter(consultation_id=consultation['id']).exists())
+        self.assertFalse(AuditEvent.objects.filter(patient=self.patient, event='note.create').exists())
 
     def test_invalid_data_is_defensive_for_corrupt_persisted_weight(self):
         current = SimpleNamespace(id=self.patient.id, patient=self.patient,

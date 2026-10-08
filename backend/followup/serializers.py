@@ -45,6 +45,8 @@ class ManualNoteSerializer(serializers.ModelSerializer):
         if isinstance(data, Mapping):
             extra = set(data) - {'kind', 'text'}
             if extra: raise serializers.ValidationError({key: ['Campo desconocido.'] for key in extra})
+            if 'text' in data and not isinstance(data.get('text'), str):
+                raise serializers.ValidationError({'text': ['Debe ser texto.']})
         return super().to_internal_value(data)
     class Meta:
         model = ManualNote
