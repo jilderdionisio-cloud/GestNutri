@@ -10,6 +10,7 @@ export default function Followup({ patient, onBack, preview = false }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ occurred_at: '', consultation: '', weight_kg: '', kind: 'note', text: '', file: null });
+  const [consultations, setConsultations] = useState([]);
   useEffect(() => { titleRef.current?.focus(); }, [sectionId]);
   function open(id) { setSectionId(id); setState('pending'); }
   useEffect(() => {
@@ -17,6 +18,7 @@ export default function Followup({ patient, onBack, preview = false }) {
     setState('loading'); setError('');
     client.followup(patient.id, sectionId).then(value => { setData(value); setState('ready'); }).catch(err => { setError(err.message); setState('error'); });
   }, [patient.id, sectionId]);
+  useEffect(() => { if (apiMode) client.followup(patient.id, 'consultations').then(value => setConsultations(value.results || [])).catch(() => {}); }, [patient.id]);
   async function submit(event) {
     event.preventDefault(); setError('');
     try {
@@ -41,12 +43,13 @@ export default function Followup({ patient, onBack, preview = false }) {
       {state === 'ready' && <pre aria-label="Respuesta de seguimiento">{JSON.stringify(data, null, 2)}</pre>}
       {apiMode && ['consultations', 'measurements', 'notes', 'documents'].includes(sectionId) && <form onSubmit={submit} className="form-grid" noValidate>
         {sectionId === 'consultations' && <label>Fecha con zona horaria<input required type="datetime-local" value={form.occurred_at} onChange={e => setForm({...form, occurred_at: new Date(e.target.value).toISOString()})}/></label>}
-        {sectionId !== 'consultations' && <label>ID de consulta<input required value={form.consultation} onChange={e => setForm({...form, consultation: e.target.value})}/></label>}
+        {sectionId !== 'consultations' && <label>Consulta<select required value={form.consultation} onChange={e => setForm({...form, consultation: e.target.value})}><option value="">Selecciona una consulta</option>{consultations.map(item => <option key={item.id} value={item.id}>{new Date(item.occurred_at).toLocaleString()}</option>)}</select></label>}
         {sectionId === 'measurements' && <label>Peso kg<input required value={form.weight_kg} onChange={e => setForm({...form, weight_kg: e.target.value})}/></label>}
         {sectionId === 'notes' && <><label>Tipo<select value={form.kind} onChange={e => setForm({...form, kind:e.target.value})}><option value="note">Nota</option><option value="preference">Preferencia</option><option value="restriction">Restricción</option></select></label><label>Texto<textarea required value={form.text} onChange={e => setForm({...form,text:e.target.value})}/></label></>}
         {sectionId === 'documents' && <label>Archivo<input required type="file" accept="application/pdf,image/jpeg,image/png" onChange={e => setForm({...form,file:e.target.files[0]})}/></label>}
         <button className="primary">Guardar</button>
       </form>}
+      {apiMode && sectionId === 'documents' && Array.isArray(data) && data.map(item => <button key={item.id} onClick={() => window.location.assign(client.documentDownload(item.id))}>Descargar {item.original_name}</button>)}
       <p id="followup-dependency" className="dependency">Registro y edición pendientes de contrato API y migraciones disponibles. Resumen y documentos requieren además definición explícita de su alcance.</p>
     </div>
   </section>;
