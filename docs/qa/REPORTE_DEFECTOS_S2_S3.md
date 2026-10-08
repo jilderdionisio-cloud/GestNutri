@@ -17,13 +17,13 @@
 - **Resultado actual:** historial devuelve una lista simple completa (6 elementos en la prueba), ignora paginación; los detalles devuelven 404 porque las rutas no existen.
 - **Resultado esperado:** envoltura paginada acordada y rutas de detalle disponibles con autorización/404 para recursos ajenos.
 
-## DEF-S2-API-003 — La evolución no implementa el sexto estado `invalid_data`
+## DEF-S2-API-003 — Resuelto en candidato: evolución incorpora el sexto estado `invalid_data`
 
-- **Estado:** abierto; reproducido por inspección y ejecución QA el 2026-10-07.
-- **Versión:** PR #34 `f00450ae450d97bbcad32c1887a6aac373d31c85`.
-- **Pasos:** revisar `followup/views.py` y ejecutar los cinco escenarios alcanzables: primera, aumento, disminución, igualdad y falta de medición.
-- **Resultado actual:** se obtienen `first`, `increase`, `decrease`, `equal` e `insufficient_data`; la vista no contiene una rama/valor `invalid_data`.
-- **Resultado esperado:** implementar y probar el sexto estado defensivo acordado, sin permitir persistir valores inválidos ni emitir `NaN`/`Infinity`.
+- **Estado:** resuelto en candidato; verificado el 2026-10-07.
+- **Versión de corrección:** PR #34 `e655221090cd2052c111644589bf8ce3984b5f6e` (implementación en `e8747db`).
+- **Evidencia:** Action 37719637557 ejecutó la prueba `test_invalid_data_is_defensive_for_corrupt_persisted_weight` dentro de `accounts patients followup`, 31/31 contra `postgres:17`.
+- **Resultado:** la vista prioriza peso no finito/fuera de rango y responde 200, `status: invalid_data`, `delta_kg: null`.
+- **Límite pendiente:** el caso construye una lectura simulada con `SimpleNamespace(weight_kg=Decimal('NaN'))` y parches; no prueba una inserción o corrupción real en PostgreSQL.
 
 Abrir un Issue por defecto reproducible: `BUG S2/S3: <resumen>`. Enlazar #20 o #28, el Issue propietario (#17–#19 o #25–#27), PR y SHA probados.
 
