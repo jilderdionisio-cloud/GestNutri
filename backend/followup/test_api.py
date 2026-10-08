@@ -1,11 +1,16 @@
 from datetime import timedelta
+from decimal import Decimal
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
+from rest_framework.test import APIRequestFactory, force_authenticate
 
 from patients.models import Patient
+from .views import evolution
 
 
 class FollowupApiTests(TestCase):
@@ -53,3 +58,16 @@ class FollowupApiTests(TestCase):
         self.client.post(f"/api/v1/consultations/{last['id']}/measurements/", {'weight_kg': '71.00'}, format='json')
         self.assertEqual(self.client.get(f"/api/v1/consultations/{middle['id']}/evolution/").json()['status'], 'insufficient_data')
         self.assertEqual(self.client.get(f"/api/v1/consultations/{last['id']}/evolution/").json()['status'], 'insufficient_data')
+
+    def test_invalid_data_is_defensive_for_corrupt_persisted_weight(self):
+        current = SimpleNamespace(id=self.patient.id, patient=self.patient,
+                                  measurement=SimpleNamespace(weight_kg=Decimal('NaN')))
+        query = SimpleNamespace(select_related=lambda *args: SimpleNamespace(order_by=lambda *args: [current]))
+        request = APIRequestFactory().get(f'/api/v1/consultations/{current.id}/evolution/')
+        force_authenticate(request, user=self.owner)
+        with patch('followup.views.consultation_for', return_value=current), \
+             patch('followup.views.Consultation.objects.filter', return_value=query):
+            response = evolution(request, current.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'invalid_data')
+        self.assertIsNone(response.data['delta_kg'])
