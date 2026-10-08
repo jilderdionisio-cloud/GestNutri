@@ -19,6 +19,11 @@ export default function Followup({ patient, onBack, preview = false }) {
     setState('loading'); setError('');
     client.followup(patient.id, sectionId).then(value => { setData(value); setState('ready'); }).catch(err => { setError(err.message); setState('error'); });
   }, [patient.id, sectionId, refresh]);
+  useEffect(() => {
+    if (!apiMode || sectionId !== 'evolution' || !form.consultation) return;
+    setState('loading'); setError('');
+    client.evolution(form.consultation).then(value => { setData(value); setState('ready'); }).catch(err => { setError(err.message); setState('error'); });
+  }, [sectionId, form.consultation, refresh]);
   useEffect(() => { if (apiMode) client.followup(patient.id, 'consultations').then(value => setConsultations(value.results || [])).catch(() => {}); }, [patient.id]);
   async function submit(event) {
     event.preventDefault(); setError('');
@@ -42,6 +47,7 @@ export default function Followup({ patient, onBack, preview = false }) {
       {state === 'validation' && <p className="error" role="alert">Ejemplo visual: revisa los datos indicados antes de guardar. Los mensajes por campo se incorporarán con las reglas aprobadas.</p>}
       {state === 'pending' && <div className="empty"><h4>Preparada para recibir el contrato</h4><p>No hay campos, unidades, fechas ni registros de Sprint 2 definidos en el frontend.</p></div>}
       {state === 'ready' && <pre aria-label="Respuesta de seguimiento">{JSON.stringify(data, null, 2)}</pre>}
+      {apiMode && sectionId === 'evolution' && <label>Consulta para evolución<select value={form.consultation} onChange={e => setForm({...form, consultation:e.target.value})}><option value="">Selecciona una consulta</option>{consultations.map(item => <option key={item.id} value={item.id}>{new Date(item.occurred_at).toLocaleString()}</option>)}</select></label>}
       {apiMode && ['consultations', 'measurements', 'notes', 'documents'].includes(sectionId) && <form onSubmit={submit} className="form-grid" noValidate>
         {sectionId === 'consultations' && <label>Fecha con zona horaria<input required type="datetime-local" value={form.occurred_at} onChange={e => setForm({...form, occurred_at: new Date(e.target.value).toISOString()})}/></label>}
         {sectionId !== 'consultations' && <label>Consulta<select required value={form.consultation} onChange={e => setForm({...form, consultation: e.target.value})}><option value="">Selecciona una consulta</option>{consultations.map(item => <option key={item.id} value={item.id}>{new Date(item.occurred_at).toLocaleString()}</option>)}</select></label>}
