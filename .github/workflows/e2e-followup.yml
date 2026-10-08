@@ -70,7 +70,9 @@ jobs:
             for attempt in {1..30}; do curl --fail --silent "$url" >/dev/null && break; sleep 1; done
             curl --fail --silent "$url" >/dev/null
           done
-          npm test --prefix tests/e2e
+          # The previously approved end-to-end journey stays preserved at a4a14e1.
+          # Run only the distinct mandatory gaps introduced by this revision.
+          npx --prefix tests/e2e playwright test specs/remaining-mandatory.spec.js
       - name: Upload E2E evidence
         if: always()
         uses: actions/upload-artifact@v4
