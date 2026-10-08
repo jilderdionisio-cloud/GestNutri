@@ -5,8 +5,9 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.http import FileResponse
 from rest_framework.pagination import PageNumberPagination
-from .models import Consultation, Measurement, ManualNote
+from .models import AuditEvent, Consultation, Document, Measurement, ManualNote
 from .serializers import ConsultationSerializer, MeasurementSerializer, ManualNoteSerializer
 from patients.models import Patient
 
@@ -23,6 +24,9 @@ def paged(request, queryset, serializer):
     page = pager.paginate_queryset(queryset, request)
     return pager.get_paginated_response(serializer(page, many=True).data)
 
+def audit(request, patient, event, outcome='success'):
+    AuditEvent.objects.create(actor=request.user, patient=patient, event=event, outcome=outcome)
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -33,7 +37,8 @@ def consultations(request, patient_id):
         return paged(request, Consultation.objects.filter(patient=patient), ConsultationSerializer)
     serializer = ConsultationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    return Response(ConsultationSerializer(serializer.save(patient=patient)).data, status=status.HTTP_201_CREATED)
+    item = serializer.save(patient=patient); audit(request, patient, 'consultation.create')
+    return Response(ConsultationSerializer(item).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET', 'POST'])
@@ -49,6 +54,7 @@ def measurements(request, consultation_id):
         with transaction.atomic(): measurement = serializer.save(consultation=consultation)
     except IntegrityError:
         return Response({'non_field_errors': ['Ya existe una medición.']}, status=400)
+    audit(request, consultation.patient, 'measurement.create')
     return Response(MeasurementSerializer(measurement).data, status=201)
 
 
@@ -60,7 +66,8 @@ def notes(request, consultation_id):
     if request.method == 'GET': return paged(request, consultation.notes.all(), ManualNoteSerializer)
     serializer = ManualNoteSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    return Response(ManualNoteSerializer(serializer.save(consultation=consultation)).data, status=201)
+    item = serializer.save(consultation=consultation); audit(request, consultation.patient, 'note.create')
+    return Response(ManualNoteSerializer(item).data, status=201)
 
 
 @api_view(['GET'])
@@ -85,6 +92,42 @@ def consultation_detail(request, consultation_id):
 def measurement_detail(request, measurement_id):
     item = Measurement.objects.select_related('consultation__patient').filter(id=measurement_id, consultation__patient__owner=request.user).first()
     return Response(MeasurementSerializer(item).data) if item else Response(status=404)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def summary(request, patient_id):
+    patient = patient_for(request.user, patient_id)
+    if not patient: return Response(status=404)
+    rows = Consultation.objects.filter(patient=patient).select_related('measurement')
+    weights = [str(row.measurement.weight_kg) for row in rows if hasattr(row, 'measurement')]
+    return Response({'patient': str(patient.id), 'consultations': rows.count(), 'measurements': len(weights), 'latest_weight_kg': weights[0] if weights else None})
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def documents(request, patient_id):
+    patient = patient_for(request.user, patient_id)
+    if not patient: return Response(status=404)
+    if request.method == 'GET':
+        values = [{'id': str(item.id), 'consultation': str(item.consultation_id) if item.consultation_id else None, 'original_name': item.original_name, 'content_type': item.content_type, 'size_bytes': item.size_bytes, 'uploaded_at': item.uploaded_at} for item in Document.objects.filter(patient=patient)]
+        return Response(values)
+    uploaded = request.FILES.get('file')
+    if not uploaded: return Response({'file': ['Archivo requerido.']}, status=400)
+    consultation_id = request.data.get('consultation')
+    consultation = consultation_for(request.user, consultation_id) if consultation_id else None
+    if consultation_id and (not consultation or consultation.patient_id != patient.id): return Response({'consultation': ['Consulta inválida.']}, status=400)
+    item = Document(patient=patient, consultation=consultation, file=uploaded, original_name=uploaded.name, content_type=uploaded.content_type or '', size_bytes=uploaded.size)
+    try: item.full_clean()
+    except Exception as exc: return Response({'file': [str(exc)]}, status=400)
+    item.save(); audit(request, patient, 'document.upload')
+    return Response({'id': str(item.id)}, status=201)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def document_download(request, document_id):
+    item = Document.objects.select_related('patient').filter(id=document_id, patient__owner=request.user).first()
+    if not item: return Response(status=404)
+    audit(request, item.patient, 'document.download')
+    return FileResponse(item.file.open('rb'), as_attachment=True, filename=item.original_name, content_type=item.content_type)
 
 
 @api_view(['GET'])
