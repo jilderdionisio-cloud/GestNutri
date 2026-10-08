@@ -83,8 +83,6 @@ class ManualNote(models.Model):
         super().clean()
         if isinstance(self.text, str):
             self.text = self.text.strip()
-
-
 def document_upload_path(instance, filename):
     return f'private-documents/{instance.patient_id}/{uuid.uuid4()}{Path(filename).suffix.lower()}'
 
