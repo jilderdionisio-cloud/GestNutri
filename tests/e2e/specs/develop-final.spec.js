@@ -33,7 +33,7 @@ test('seguimiento S2 muestra vacío real y error 500 recuperable', async ({ page
   await page.getByPlaceholder('Nombre, teléfono o correo').fill(`qa-empty-followup-${suffix}@example.test`);
   await page.getByRole('button', { name: `Ver expediente de QA EmptyFollowup${suffix}` }).click();
   await page.getByRole('button', { name: 'Abrir seguimiento nutricional' }).click();
-  await expect(page.getByRole('status')).toContainText('Este paciente aún no tiene consultas.');
+  await expect(page.locator('.empty[role="status"]')).toContainText('Este paciente aún no tiene consultas.');
   await expect(page.getByRole('button', { name: 'Crear primera consulta' })).toBeVisible();
 
   let injected = true;
@@ -49,7 +49,7 @@ test('seguimiento S2 muestra vacío real y error 500 recuperable', async ({ page
   const recovered = page.waitForResponse(response => response.url().includes('/history/') && response.status() === 200);
   await page.getByRole('button', { name: 'Reintentar' }).click();
   await recovered;
-  await expect(page.getByRole('status')).toContainText('Este paciente aún no tiene consultas.');
+  await expect(page.locator('.empty[role="status"]')).toContainText('Este paciente aún no tiene consultas.');
   expect(injected).toBe(false);
 });
 
