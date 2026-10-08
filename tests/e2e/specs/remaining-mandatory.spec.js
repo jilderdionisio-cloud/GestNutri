@@ -40,6 +40,7 @@ async function createPatientAndConsultations(page, label, weights = []) {
       if (weight !== null) await post(`consultations/${consultation.id}/measurements/`, { weight_kg: weight });
       consultations.push(consultation);
     }
+    if (consultations[0]) await post(`consultations/${consultations[0].id}/notes/`, { kind: 'note', text: 'Nota sintética de auditoría.' });
     return { patient, consultations };
   }, { label, weights });
 }
@@ -66,6 +67,7 @@ test('formatos, límite y consulta opcional de documentos se validan contra Post
 
   await login(page, owner);
   const mine = await createPatientAndConsultations(page, 'DocumentRules', ['70.00']);
+  const empty = await createPatientAndConsultations(page, 'EmptySummary', []);
   const results = await page.evaluate(async ({ patientId, foreignConsultationId }) => {
     async function upload({ name, type, size, consultation }) {
       const csrf = await fetch('/api/v1/auth/csrf/').then(response => response.json());
@@ -93,4 +95,6 @@ test('formatos, límite y consulta opcional de documentos se validan contra Post
     pdf: 201, jpeg: 201, png: 201, exactLimit: 201,
     tooLarge: 400, wrongType: 400, foreignConsultation: 400,
   });
+  const emptySummary = await page.evaluate(patientId => fetch(`/api/v1/patients/${patientId}/summary/`, { credentials: 'include' }).then(response => response.json()), empty.patient.id);
+  expect(emptySummary).toMatchObject({ consultations: 0, measurements: 0, latest_weight_kg: null });
 });
