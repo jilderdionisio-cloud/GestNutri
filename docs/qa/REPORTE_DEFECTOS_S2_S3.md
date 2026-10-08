@@ -20,14 +20,13 @@
 - **Resultado:** la vista prioriza peso no finito/fuera de rango y responde 200, `status: invalid_data`, `delta_kg: null`.
 - **Límite pendiente:** el caso construye una lectura simulada con `SimpleNamespace(weight_kg=Decimal('NaN'))` y parches; no prueba una inserción o corrupción real en PostgreSQL.
 
-## DEF-S2-API-004 — Historial no rechaza parámetros de paginación inválidos
+## DEF-S2-API-004 — Resuelto en candidato: historial rechaza parámetros de paginación inválidos
 
-- **Estado:** abierto en el candidato #34 `8a8128a589fc91b330458a724648788a211b0f9c`.
+- **Estado:** resuelto en candidato #34 `1496b07d286f0a1afae5b8a6e1296ade8b55a363`; pendiente de integración en `develop`.
 - **Trazabilidad:** `S2-HIST-01`; área backend; la verificación previa de `a520d07` cubría `paged()` para consultas/mediciones/notas, pero `history()` instancia `PageNumberPagination` directamente y omite esa validación.
 - **Entorno:** SQLite desechable, migraciones candidatas aplicadas, cuenta/paciente sintéticos de QA; no acredita PostgreSQL.
 - **Pasos reproducibles:** autenticarse como propietario y solicitar `GET /api/v1/patients/{id}/history/?page=bad`, `?page=0`, `?page_size=bad` y `?page_size=-1`.
-- **Esperado / real:** los cuatro parámetros inválidos deben responder 400. El candidato responde 404, 404, 200 y 200, respectivamente.
-- **Corrección requerida:** reutilizar una validación equivalente a la de las demás listas y agregar prueba específica de historial. Después, QA debe verificarla contra PostgreSQL y actualizar el E2E sólo si cambia el flujo afectado.
+- **Esperado / real tras corrección:** los cuatro parámetros inválidos responden 400 en Action 37730869750 sobre PostgreSQL 17. Actions 37729753850 ejecutó 34 pruebas `accounts patients followup` sobre el SHA de corrección.
 
 Abrir un Issue por defecto reproducible: `BUG S2/S3: <resumen>`. Enlazar #20 o #28, el Issue propietario (#17–#19 o #25–#27), PR y SHA probados.
 
