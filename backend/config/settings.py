@@ -12,7 +12,7 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INSTALLED_APPS = [
     'django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions',
-    'rest_framework', 'accounts', 'patients',
+    'rest_framework', 'accounts', 'patients', 'followup',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
