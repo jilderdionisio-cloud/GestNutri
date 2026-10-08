@@ -70,6 +70,22 @@ test('historial rechaza parámetros de paginación inválidos', async ({ page })
   expect(statuses).toEqual([400, 400, 400, 400]);
 });
 
+test('Reintentar vuelve a ejecutar la solicitud fallida', async ({ page }) => {
+  let attempts = 0;
+  await page.route('**/api/v1/patients/**', async route => {
+    attempts += 1;
+    if (attempts === 1) await route.abort('failed');
+    else await route.continue();
+  });
+  await login(page, owner);
+  await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible();
+  const retryResponse = page.waitForResponse(response => response.url().includes('/api/v1/patients/') && response.status() === 200);
+  await page.getByRole('button', { name: 'Reintentar' }).click();
+  await retryResponse;
+  await expect(page.getByRole('heading', { name: 'Pacientes', exact: true })).toBeVisible();
+  expect(attempts).toBe(2);
+});
+
 test('formatos, límite y consulta opcional de documentos se validan contra PostgreSQL', async ({ page }) => {
   await login(page, other);
   const foreign = await createPatientAndConsultations(page, 'ForeignDocument', ['65.00']);
