@@ -75,7 +75,7 @@ test('recorrido API real y aislamiento entre dos propietarios', async ({ page })
   await page.locator('form').filter({ has: page.getByLabel('Texto') }).getByRole('button', { name: 'Guardar' }).click();
   expect((await noteCreated).status()).toBe(201);
 
-  await page.getByRole('button', { name: 'Historial' }).click();
+  // Saving the note returns to History and must refresh it without a second navigation.
   await expect(page.getByLabel('Respuesta de seguimiento')).toContainText(consultation.id);
 
   await page.getByRole('button', { name: 'Evolución' }).click();
