@@ -64,6 +64,9 @@ class FollowupApiTests(TestCase):
         self.assertEqual(self.client.get(f"/api/v1/notes/{note['id']}/").status_code, 200)
         self.assertEqual(self.client.get(endpoint + '?page=bad').status_code, 400)
         self.assertEqual(self.client.get(endpoint + '?page_size=0').status_code, 400)
+        history = f'/api/v1/patients/{self.patient.id}/history/'
+        self.assertEqual(self.client.get(history + '?page=bad').status_code, 400)
+        self.assertEqual(self.client.get(history + '?page_size=-1').status_code, 400)
         self.assertEqual(self.client.post(endpoint, {'occurred_at': '2026-01-01T00:00:00Z'}, format='multipart').status_code, 415)
         self.assertEqual(self.client.post(f"/api/v1/consultations/{item['id']}/measurements/", {'weight_kg': '7e1'}, format='json').status_code, 400)
 

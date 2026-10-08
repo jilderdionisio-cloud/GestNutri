@@ -85,6 +85,9 @@ def history(request, patient_id):
     patient = patient_for(request.user, patient_id)
     if not patient: return Response(status=404)
     rows = Consultation.objects.filter(patient=patient).select_related('measurement')
+    for key in ('page', 'page_size'):
+        if key in request.query_params and (not request.query_params[key].isdigit() or int(request.query_params[key]) < 1):
+            return Response({key: ['Parámetro de paginación inválido.']}, status=400)
     pager = PageNumberPagination(); pager.page_size = 20; pager.page_size_query_param = 'page_size'; pager.max_page_size = 100
     page = pager.paginate_queryset(rows, request)
     values = [ConsultationSerializer(row).data | {'measurement': MeasurementSerializer(row.measurement).data if hasattr(row, 'measurement') else None} for row in page]
