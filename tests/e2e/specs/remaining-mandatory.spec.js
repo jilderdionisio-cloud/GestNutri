@@ -56,7 +56,7 @@ test('estados reales restantes de evolución se muestran desde la API PostgreSQL
 
   for (const [index, expected] of ['Primera consulta', 'Sin cambio registrado', 'Aumento registrado', 'Disminución registrada', 'Datos insuficientes'].entries()) {
     await page.getByLabel('Consulta').selectOption(fixture.consultations[index].id);
-    await expect(page.getByText(expected)).toBeVisible();
+    await expect(page.getByText(expected, { exact: true })).toBeVisible();
   }
 });
 

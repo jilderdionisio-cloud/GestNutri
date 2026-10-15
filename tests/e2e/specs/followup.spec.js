@@ -79,7 +79,7 @@ test('recorrido API real y aislamiento entre dos propietarios', async ({ page })
 
   await page.getByRole('button', { name: 'Evolución' }).click();
   await page.getByLabel('Consulta').selectOption(consultation.id);
-  await expect(page.getByText('Primera consulta')).toBeVisible();
+  await expect(page.getByText('Primera consulta', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Resumen' }).click();
   await expect(page.getByText('70 kg')).toBeVisible();
