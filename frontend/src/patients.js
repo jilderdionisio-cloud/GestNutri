@@ -10,6 +10,11 @@ export const fields = [
 ];
 export const emptyPatient = () => Object.fromEntries(fields.map(f => [f.key, f.key === 'birth_date' ? null : '']));
 export const patientName = patient => [patient.first_name, patient.last_name].join(' ');
+export function whatsappUrl(phone) {
+  const internationalPhone = typeof phone === 'string' ? phone.trim() : '';
+  if (!/^\+[1-9][0-9]{7,14}$/.test(internationalPhone)) return null;
+  return `https://wa.me/${internationalPhone.slice(1)}`;
+}
 export const initialPatients = [{ ...emptyPatient(), id: 'f58b634c-daf9-4b8c-9c23-a25f9c837fd2', first_name: 'Ana María', last_name: 'Ejemplo Prueba', phone: '+12025550123', email: 'ana.ejemplo@example.com', birth_date: '1990-04-15', allergies: 'Alergia ficticia a cacahuate', restrictions: 'Restricción ficticia de lactosa', created_at: '2026-10-06T18:00:00Z', updated_at: '2026-10-06T18:00:00Z' }];
 export function validate(patient) {
   const errors = {};
