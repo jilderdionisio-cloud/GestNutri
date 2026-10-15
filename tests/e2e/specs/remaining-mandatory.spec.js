@@ -54,9 +54,9 @@ test('estados reales restantes de evolución se muestran desde la API PostgreSQL
   await page.getByRole('button', { name: 'Abrir seguimiento nutricional' }).click();
   await page.getByRole('button', { name: 'Evolución' }).click();
 
-  for (const [index, expected] of ['first', 'equal', 'increase', 'decrease', 'insufficient_data'].entries()) {
-    await page.getByLabel('Consulta para evolución').selectOption(fixture.consultations[index].id);
-    await expect(page.getByLabel('Respuesta de seguimiento')).toContainText(`"status": "${expected}"`);
+  for (const [index, expected] of ['Primera consulta', 'Sin cambio registrado', 'Aumento registrado', 'Disminución registrada', 'Datos insuficientes'].entries()) {
+    await page.getByLabel('Consulta').selectOption(fixture.consultations[index].id);
+    await expect(page.getByText(expected)).toBeVisible();
   }
 });
 
