@@ -67,12 +67,12 @@ test('formulario S2 muestra en pantalla la validación real del servidor', async
   await page.getByRole('button', { name: 'Guardar consulta' }).click();
   await expect(page.getByRole('button', { name: 'Mediciones' })).toBeVisible();
   await page.getByRole('button', { name: 'Mediciones' }).click();
-  await page.getByLabel('Consulta').selectOption({ index: 1 });
+  await page.getByLabel('Consulta').selectOption({ index: 0 });
   await page.getByLabel('Peso en kilogramos').fill('70');
   await page.getByRole('button', { name: 'Guardar medición' }).click();
   await expect(page.getByRole('button', { name: 'Mediciones' })).toBeVisible();
   await page.getByRole('button', { name: 'Mediciones' }).click();
-  await page.getByLabel('Consulta').selectOption({ index: 1 });
+  await page.getByLabel('Consulta').selectOption({ index: 0 });
   await page.getByLabel('Peso en kilogramos').fill('71');
   const duplicate = page.waitForResponse(response => response.url().includes('/measurements/') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Guardar medición' }).click();

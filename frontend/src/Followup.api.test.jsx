@@ -60,5 +60,7 @@ describe('seguimiento conectado a API', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar consulta' }));
     await waitFor(() => expect(api.createConsultation).toHaveBeenCalledOnce());
     expect(await screen.findByText('Registro guardado correctamente.')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Mediciones', exact: true }));
+    expect(screen.getByLabelText('Consulta').value).toBe(created.id);
   });
 });
