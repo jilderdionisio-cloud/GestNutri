@@ -34,7 +34,9 @@ export function createApiClient(fetcher = fetch) {
       const body = Object.fromEntries(fields.map(f => [f.key, f.key === 'birth_date' ? values[f.key] || null : (values[f.key] ?? '').trim()]));
       return api(id ? `patients/${encodeURIComponent(id)}/` : 'patients/', { method: id ? 'PATCH' : 'POST', body });
     },
-    followup(patientId, section) { return api(`patients/${encodeURIComponent(patientId)}/${section}/`); },
+    followup(patientId, section, page = 1) { return api(`patients/${encodeURIComponent(patientId)}/${section}/?${new URLSearchParams({ page: String(page) })}`); },
+    measurements(consultationId, page = 1) { return api(`consultations/${encodeURIComponent(consultationId)}/measurements/?${new URLSearchParams({ page: String(page) })}`); },
+    notes(consultationId, page = 1) { return api(`consultations/${encodeURIComponent(consultationId)}/notes/?${new URLSearchParams({ page: String(page) })}`); },
     createConsultation(patientId, occurred_at) { return api(`patients/${encodeURIComponent(patientId)}/consultations/`, { method: 'POST', body: { occurred_at } }); },
     createMeasurement(consultationId, weight_kg) { return api(`consultations/${encodeURIComponent(consultationId)}/measurements/`, { method: 'POST', body: { weight_kg } }); },
     createNote(consultationId, kind, text) { return api(`consultations/${encodeURIComponent(consultationId)}/notes/`, { method: 'POST', body: { kind, text } }); },

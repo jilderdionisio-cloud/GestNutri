@@ -33,7 +33,7 @@ test('seguimiento S2 muestra vacío real y error 500 recuperable', async ({ page
   await page.getByPlaceholder('Nombre, teléfono o correo').fill(`qa-empty-followup-${suffix}@example.test`);
   await page.getByRole('button', { name: `Ver expediente de QA EmptyFollowup${suffix}` }).click();
   await page.getByRole('button', { name: 'Abrir seguimiento nutricional' }).click();
-  await expect(page.locator('.empty[role="status"]')).toContainText('Este paciente aún no tiene consultas.');
+  await expect(page.getByRole('heading', { name: 'Este paciente aún no tiene consultas' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Crear primera consulta' })).toBeVisible();
 
   let injected = true;
@@ -49,7 +49,7 @@ test('seguimiento S2 muestra vacío real y error 500 recuperable', async ({ page
   const recovered = page.waitForResponse(response => response.url().includes('/history/') && response.status() === 200);
   await page.getByRole('button', { name: 'Reintentar' }).click();
   await recovered;
-  await expect(page.locator('.empty[role="status"]')).toContainText('Este paciente aún no tiene consultas.');
+  await expect(page.getByRole('heading', { name: 'Este paciente aún no tiene consultas' })).toBeVisible();
   expect(injected).toBe(false);
 });
 
@@ -64,18 +64,18 @@ test('formulario S2 muestra en pantalla la validación real del servidor', async
   await page.getByRole('button', { name: 'Abrir seguimiento nutricional' }).click();
   await page.getByRole('button', { name: 'Consultas' }).click();
   await page.getByLabel('Fecha con zona horaria').fill('2026-10-01T10:00');
-  await page.getByRole('button', { name: 'Guardar' }).click();
+  await page.getByRole('button', { name: 'Guardar consulta' }).click();
   await expect(page.getByRole('button', { name: 'Mediciones' })).toBeVisible();
   await page.getByRole('button', { name: 'Mediciones' }).click();
-  await page.locator('form').getByLabel('Consulta').selectOption({ index: 1 });
-  await page.getByLabel('Peso kg').fill('70');
-  await page.getByRole('button', { name: 'Guardar' }).click();
+  await page.getByLabel('Consulta').selectOption({ index: 0 });
+  await page.getByLabel('Peso en kilogramos').fill('70');
+  await page.getByRole('button', { name: 'Guardar medición' }).click();
   await expect(page.getByRole('button', { name: 'Mediciones' })).toBeVisible();
   await page.getByRole('button', { name: 'Mediciones' }).click();
-  await page.locator('form').getByLabel('Consulta').selectOption({ index: 1 });
-  await page.getByLabel('Peso kg').fill('71');
+  await page.getByLabel('Consulta').selectOption({ index: 0 });
+  await page.getByLabel('Peso en kilogramos').fill('71');
   const duplicate = page.waitForResponse(response => response.url().includes('/measurements/') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Guardar' }).click();
+  await page.getByRole('button', { name: 'Guardar medición' }).click();
   expect((await duplicate).status()).toBe(400);
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('alert')).toContainText(/measurement|medición|unique|consulta/i);
