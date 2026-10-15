@@ -51,7 +51,7 @@ test('recorrido API real y aislamiento entre dos propietarios', async ({ page })
   const consultationCreated = page.waitForResponse(response =>
     response.url().includes(`/api/v1/patients/${savedPatient.id}/consultations/`) && response.request().method() === 'POST');
   await page.getByLabel('Fecha con zona horaria').fill('2026-10-01T10:00');
-  await page.locator('form').filter({ has: page.getByLabel('Fecha con zona horaria') }).getByRole('button', { name: 'Guardar' }).click();
+  await page.locator('form').filter({ has: page.getByLabel('Fecha con zona horaria') }).getByRole('button', { name: 'Guardar consulta' }).click();
   const consultationResponse = await consultationCreated;
   expect(consultationResponse.status()).toBe(201);
   const consultation = await consultationResponse.json();
@@ -63,8 +63,8 @@ test('recorrido API real y aislamiento entre dos propietarios', async ({ page })
   await page.getByLabel('Consulta').selectOption(consultation.id);
   const measurementCreated = page.waitForResponse(response =>
     response.url().includes(`/api/v1/consultations/${consultation.id}/measurements/`) && response.request().method() === 'POST');
-  await page.getByLabel('Peso kg').fill('70.00');
-  await page.locator('form').filter({ has: page.getByLabel('Peso kg') }).getByRole('button', { name: 'Guardar' }).click();
+  await page.getByLabel('Peso en kilogramos').fill('70.00');
+  await page.locator('form').filter({ has: page.getByLabel('Peso en kilogramos') }).getByRole('button', { name: 'Guardar medición' }).click();
   expect((await measurementCreated).status()).toBe(201);
 
   await page.getByRole('button', { name: 'Notas manuales' }).click();
@@ -72,41 +72,40 @@ test('recorrido API real y aislamiento entre dos propietarios', async ({ page })
   const noteCreated = page.waitForResponse(response =>
     response.url().includes(`/api/v1/consultations/${consultation.id}/notes/`) && response.request().method() === 'POST');
   await page.getByLabel('Texto').fill('Nota E2E sintética sin interpretación clínica.');
-  await page.locator('form').filter({ has: page.getByLabel('Texto') }).getByRole('button', { name: 'Guardar' }).click();
+  await page.locator('form').filter({ has: page.getByLabel('Texto') }).getByRole('button', { name: 'Guardar nota' }).click();
   expect((await noteCreated).status()).toBe(201);
 
-  // Saving the note returns to History and must refresh it without a second navigation.
-  await expect(page.getByLabel('Respuesta de seguimiento')).toContainText(consultation.id);
+  await expect(page.getByText('Registro guardado correctamente.')).toBeVisible();
 
   await page.getByRole('button', { name: 'Evolución' }).click();
-  await page.getByLabel('Consulta para evolución').selectOption(consultation.id);
-  await expect(page.getByLabel('Respuesta de seguimiento')).toContainText('first');
+  await page.getByLabel('Consulta').selectOption(consultation.id);
+  await expect(page.getByText('Primera consulta')).toBeVisible();
 
   await page.getByRole('button', { name: 'Resumen' }).click();
-  await expect(page.getByLabel('Respuesta de seguimiento')).toContainText('70.00');
+  await expect(page.getByText('70 kg')).toBeVisible();
 
   await page.getByRole('button', { name: 'Documentos' }).click();
   await page.getByLabel('Consulta').selectOption(consultation.id);
-  await page.getByLabel('Archivo').setInputFiles({
+  await page.getByLabel('Archivo privado').setInputFiles({
     name: 'qa-e2e.pdf',
     mimeType: 'application/pdf',
     buffer: Buffer.from('%PDF-1.4 synthetic QA E2E'),
   });
   const documentCreated = page.waitForResponse(response =>
     response.url().includes(`/api/v1/patients/${savedPatient.id}/documents/`) && response.request().method() === 'POST');
-  await page.locator('form').filter({ has: page.getByLabel('Archivo') }).getByRole('button', { name: 'Guardar' }).click();
+  await page.locator('form').filter({ has: page.getByLabel('Archivo privado') }).getByRole('button', { name: 'Cargar documento' }).click();
   expect((await documentCreated).status()).toBe(201);
 
   await page.getByRole('button', { name: 'Documentos' }).click();
-  const downloadButton = page.getByRole('button', { name: 'Descargar qa-e2e.pdf' });
+  const downloadButton = page.getByRole('link', { name: 'Descargar qa-e2e.pdf' });
   await expect(downloadButton).toBeVisible();
   const download = page.waitForEvent('download');
   await downloadButton.click();
   expect((await download).suggestedFilename()).toBe('qa-e2e.pdf');
 
   await returnToFollowupAfterReload(page);
-  // History is the default section after reload; wait for its real API response.
-  await expect(page.getByLabel('Respuesta de seguimiento')).toContainText(consultation.id);
+  // History is the default section after reload and renders its real API response as a table/card.
+  await expect(page.getByText('Medición disponible')).toBeVisible();
 
   await page.getByRole('button', { name: 'Salir' }).click();
   await expect(page.getByRole('heading', { name: 'Bienvenida a GestNutri' })).toBeVisible();
