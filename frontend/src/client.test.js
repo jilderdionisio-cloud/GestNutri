@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMockClient } from './client.js';
-import { emptyPatient, initialPatients, validate } from './patients.js';
+import { emptyPatient, initialPatients, validate, whatsappUrl } from './patients.js';
 test('flujo local: acceso, búsqueda, alta, edición y detalle', async () => {
  const client = createMockClient({ delay: 0 });
  assert.equal(await client.login(), true);
@@ -9,10 +9,11 @@ test('flujo local: acceso, búsqueda, alta, edición y detalle', async () => {
  assert.equal((await client.list('inexistente')).length, 0);
  const saved = await client.save({ ...emptyPatient(), first_name: 'Persona', last_name: 'Ficticia', phone: '+12025550123' });
  assert.equal(saved.birth_date, null);
- const edited = await client.save({ ...saved, allergies: 'Texto ficticio', email: '' }, saved.id);
+ const edited = await client.save({ ...saved, allergies: 'Texto ficticio', email: '', phone: '+5215512345678' }, saved.id);
  assert.equal(edited.id, saved.id);
  assert.equal(edited.created_at, saved.created_at);
  assert.equal((await client.detail(saved.id)).allergies, 'Texto ficticio');
+ assert.equal(whatsappUrl((await client.detail(saved.id)).phone), 'https://wa.me/5215512345678');
  assert.equal((await client.list()).length, 2);
  assert.equal((await createMockClient({ delay: 0 }).list()).length, 1);
 });
@@ -35,4 +36,11 @@ test('reglas visuales provisionales y campos de solo lectura', async () => {
  const saved = await client.save({ ...initialPatients[0], id: 'inventado', extra: 'descartar' });
  assert.notEqual(saved.id, 'inventado');
  assert.equal('extra' in saved, false);
+});
+test('WhatsApp usa exclusivamente teléfonos internacionales válidos del paciente', () => {
+ assert.equal(whatsappUrl('+12025550123'), 'https://wa.me/12025550123');
+ assert.equal(whatsappUrl(' +5215512345678 '), 'https://wa.me/5215512345678');
+ assert.equal(whatsappUrl('5512345678'), null);
+ assert.equal(whatsappUrl('+52 55 1234 5678'), null);
+ assert.equal(whatsappUrl(undefined), null);
 });
