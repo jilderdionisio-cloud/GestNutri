@@ -16,7 +16,7 @@ No se hace `push` directo a `main` ni a `develop`.
 | Genny / frontend | `frontend/`, `docs/ui/` | Contratos en `docs/CONTRATOS/` y cualquier cambio de API. |
 | Fernanda / backend | `backend/`, `docs/api/` | Modelos, migraciones y contratos. |
 | Diana / datos | `database/`, migraciones y `docs/data/` | Modelo de datos, relaciones y cambios de persistencia. |
-| Alex / QA | `tests/`, `.github/`, `docs/qa/` | Cambios de CI y criterios de prueba. |
+| Alex (`jilderdionisio-cloud`) / QA | `tests/`, `.github/`, `docs/qa/` | Cambios de CI y criterios de prueba. |
 
 Nadie modifica el área de otra persona dentro de su rama sin una Issue de coordinación y revisión del propietario. Una historia transversal se divide en subramas por área y se integra mediante PRs pequeños.
 

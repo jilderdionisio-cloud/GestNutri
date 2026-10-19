@@ -10,7 +10,7 @@ MVP web para que profesionales de nutrición administren pacientes y den seguimi
 
 | Integrante | Rol | Área exclusiva de trabajo |
 | --- | --- | --- |
-| Alex | QA / tester | `tests/`, `.github/`, `docs/qa/` |
+| Alex (`jilderdionisio-cloud`) | QA / tester | `tests/`, `.github/`, `docs/qa/` |
 | Fernanda | Backend | `backend/`, `docs/api/` |
 | Genny | Frontend | `frontend/`, `docs/ui/` |
 | Diana | Base de datos | `database/`, `backend/*/migrations/`, `docs/data/` |
