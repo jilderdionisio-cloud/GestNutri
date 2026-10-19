@@ -49,4 +49,4 @@
 
 ## Replanificación por fecha fija
 
-Los Sprints 2 y 3 quedan reservados para el 7-8 y 9 de octubre, respectivamente. Se crearán tras la Review del Sprint 1 con el alcance real restante: primero consultas, mediciones, historial y evolución; después estabilización, pruebas, documentación y solo funciones secundarias que no arriesguen el núcleo del MVP.
+Los Sprints 2 y 3 ya están delimitados para preservar la fecha fija y podrán recortarse durante la Review, nunca ampliarse silenciosamente: [`SPRINT_2.md`](SPRINT_2.md) prioriza consultas, mediciones, historial y evolución; [`SPRINT_3.md`](SPRINT_3.md) estabiliza, prueba y documenta el MVP antes de la entrega.
