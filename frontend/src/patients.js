@@ -10,6 +10,27 @@ export const fields = [
 ];
 export const emptyPatient = () => Object.fromEntries(fields.map(f => [f.key, f.key === 'birth_date' ? null : '']));
 export const patientName = patient => [patient.first_name, patient.last_name].join(' ');
+
+export function formatBirthDate(value) {
+  if (!value) return 'No informado';
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Fecha no disponible';
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== value) return 'Fecha no disponible';
+  return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(date);
+}
+
+export function formatFileType(value) {
+  return ({ 'application/pdf': 'PDF', 'image/png': 'Imagen PNG', 'image/jpeg': 'Imagen JPG' })[value] || 'Archivo';
+}
+
+export function formatFileSize(bytes) {
+  if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) return 'Tamaño no disponible';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`;
+}
+
+export const pluralPacientes = count => `${count} ${count === 1 ? 'paciente' : 'pacientes'}`;
 export function whatsappUrl(phone) {
   const internationalPhone = typeof phone === 'string' ? phone.trim() : '';
   if (!/^\+[1-9][0-9]{7,14}$/.test(internationalPhone)) return null;
