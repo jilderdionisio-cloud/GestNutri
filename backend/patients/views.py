@@ -1,4 +1,6 @@
 from django.db.models import Q
+from django.db import IntegrityError, transaction
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import mixins, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
@@ -32,4 +34,18 @@ class PatientViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        self._save_patient(serializer, owner=self.request.user)
+
+    def perform_update(self, serializer):
+        self._save_patient(serializer)
+
+    @staticmethod
+    def _save_patient(serializer, **extra):
+        try:
+            with transaction.atomic():
+                serializer.save(**extra)
+        except DjangoValidationError as exc:
+            errors = getattr(exc, 'message_dict', {'non_field_errors': exc.messages})
+            raise ValidationError(errors) from exc
+        except IntegrityError as exc:
+            raise ValidationError({'non_field_errors': ['No se pudo guardar el paciente.']}) from exc

@@ -8,6 +8,7 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory, force_authenticate
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from patients.models import Patient
 from .models import AuditEvent, ManualNote
@@ -70,6 +71,36 @@ class FollowupApiTests(TestCase):
         self.assertEqual(self.client.get(history + '?page_size=-1').status_code, 400)
         self.assertEqual(self.client.post(endpoint, {'occurred_at': '2026-01-01T00:00:00Z'}, format='multipart').status_code, 415)
         self.assertEqual(self.client.post(f"/api/v1/consultations/{item['id']}/measurements/", {'weight_kg': '7e1'}, format='json').status_code, 400)
+
+    def test_invalid_writes_return_field_error_objects(self):
+        consultations = f'/api/v1/patients/{self.patient.id}/consultations/'
+        invalid_consultation = self.client.post(consultations, {'occurred_at': 'sin-fecha'}, format='json')
+        self.assertEqual(invalid_consultation.status_code, 400)
+        self.assertIn('occurred_at', invalid_consultation.json())
+
+        consultation = self.consultation()
+        measurement_url = f"/api/v1/consultations/{consultation['id']}/measurements/"
+        invalid_weight = self.client.post(measurement_url, {'weight_kg': 'abc'}, format='json')
+        self.assertEqual(invalid_weight.status_code, 400)
+        self.assertEqual(invalid_weight.json(), {
+            'weight_kg': ['Escribe el peso con números, por ejemplo 68.5.']})
+        self.assertEqual(self.client.post(measurement_url, {'weight_kg': '70'}, format='json').status_code, 201)
+        duplicate = self.client.post(measurement_url, {'weight_kg': '71'}, format='json')
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertEqual(duplicate.json(), {
+            'non_field_errors': ['Esta consulta ya tiene una medición.']})
+
+        notes_url = f"/api/v1/consultations/{consultation['id']}/notes/"
+        invalid_note = self.client.post(notes_url, {'kind': 'desconocido', 'text': 'x'}, format='json')
+        self.assertEqual(invalid_note.status_code, 400)
+        self.assertIn('kind', invalid_note.json())
+
+        documents_url = f'/api/v1/patients/{self.patient.id}/documents/'
+        invalid_document = self.client.post(documents_url, {
+            'file': SimpleUploadedFile('nota.txt', b'texto', content_type='text/plain')})
+        self.assertEqual(invalid_document.status_code, 400)
+        self.assertEqual(invalid_document.json(), {
+            'file': ['Sube un archivo PDF, PNG o JPG.']})
 
     def test_missing_weight_is_not_skipped(self):
         first = self.consultation(days=3)
