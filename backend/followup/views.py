@@ -1,6 +1,7 @@
 from decimal import Decimal
 from uuid import UUID
 from django.db import IntegrityError, transaction
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -63,7 +64,12 @@ def consultations(request, patient_id):
         return paged(request, Consultation.objects.filter(patient=patient), ConsultationSerializer)
     serializer = ConsultationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    item = serializer.save(patient=patient); audit(request, patient, 'consultation.create')
+    try:
+        with transaction.atomic():
+            item = serializer.save(patient=patient)
+    except (IntegrityError, DjangoValidationError):
+        return Response({'non_field_errors': ['No se pudo guardar la consulta.']}, status=400)
+    audit(request, patient, 'consultation.create')
     return Response(ConsultationSerializer(item).data, status=status.HTTP_201_CREATED)
 
 
@@ -79,8 +85,17 @@ def measurements(request, consultation_id):
     serializer.is_valid(raise_exception=True)
     try:
         with transaction.atomic(): measurement = serializer.save(consultation=consultation)
-    except IntegrityError:
-        return Response({'non_field_errors': ['Ya existe una medición.']}, status=400)
+    except IntegrityError as exc:
+        cause = getattr(exc, '__cause__', None)
+        constraint = getattr(getattr(cause, 'diag', None), 'constraint_name', '') or ''
+        message = str(cause or exc).lower()
+        if constraint == 'followup_measurement_consultation_id_key' or 'consultation_id' in message and 'unique' in message:
+            return Response({'non_field_errors': ['Esta consulta ya tiene una medición.']}, status=400)
+        if constraint == 'followup_weight_valid_range' or 'followup_weight_valid_range' in message:
+            return Response({'weight_kg': ['El peso debe estar entre 1 y 400 kg.']}, status=400)
+        return Response({'non_field_errors': ['No se pudo guardar la medición.']}, status=400)
+    except DjangoValidationError as exc:
+        return Response({'weight_kg': ['Escribe el peso con números, por ejemplo 68.5.']}, status=400)
     audit(request, consultation.patient, 'measurement.create')
     return Response(MeasurementSerializer(measurement).data, status=201)
 
@@ -94,7 +109,12 @@ def notes(request, consultation_id):
     if request.method == 'GET': return paged(request, consultation.notes.all(), ManualNoteSerializer)
     serializer = ManualNoteSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    item = serializer.save(consultation=consultation); audit(request, consultation.patient, 'note.create')
+    try:
+        with transaction.atomic():
+            item = serializer.save(consultation=consultation)
+    except (IntegrityError, DjangoValidationError):
+        return Response({'non_field_errors': ['No se pudo guardar la nota.']}, status=400)
+    audit(request, consultation.patient, 'note.create')
     return Response(ManualNoteSerializer(item).data, status=201)
 
 
@@ -148,9 +168,9 @@ def documents(request, patient_id):
         values = [{'id': str(item.id), 'consultation': str(item.consultation_id) if item.consultation_id else None, 'original_name': item.original_name, 'content_type': item.content_type, 'size_bytes': item.size_bytes, 'uploaded_at': item.uploaded_at} for item in Document.objects.filter(patient=patient)]
         return Response(values)
     uploaded = request.FILES.get('file')
-    if not uploaded: return Response({'file': ['Archivo requerido.']}, status=400)
+    if not uploaded: return Response({'file': ['Completa este campo.']}, status=400)
     if not valid_document_signature(uploaded):
-        return Response({'file': ['El contenido no coincide con un formato permitido.']}, status=400)
+        return Response({'file': ['Sube un archivo PDF, PNG o JPG.']}, status=400)
     consultation_id = request.data.get('consultation')
     if consultation_id:
         try:
@@ -160,9 +180,21 @@ def documents(request, patient_id):
     consultation = consultation_for(request.user, consultation_id) if consultation_id else None
     if consultation_id and (not consultation or consultation.patient_id != patient.id): return Response({'consultation': ['Consulta inválida.']}, status=400)
     item = Document(patient=patient, consultation=consultation, file=uploaded, original_name=uploaded.name, content_type=uploaded.content_type or '', size_bytes=uploaded.size)
-    try: item.full_clean()
-    except Exception as exc: return Response({'file': [str(exc)]}, status=400)
-    item.save(); audit(request, patient, 'document.upload')
+    try:
+        item.full_clean()
+        with transaction.atomic():
+            item.save()
+    except DjangoValidationError as exc:
+        messages = exc.messages
+        message = messages[0] if messages else 'Completa este campo.'
+        if '10 MiB' in message:
+            message = 'El archivo supera el límite de 10 MiB.'
+        elif 'Tipo de archivo' in message:
+            message = 'Sube un archivo PDF, PNG o JPG.'
+        return Response({'file': [message]}, status=400)
+    except IntegrityError:
+        return Response({'non_field_errors': ['No se pudo guardar el documento.']}, status=400)
+    audit(request, patient, 'document.upload')
     return Response({'id': str(item.id)}, status=201)
 
 @api_view(['GET'])

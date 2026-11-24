@@ -48,6 +48,17 @@ class PatientAPITests(TestCase):
             self.assertIn(field, response.json())
         self.assertFalse(Patient.objects.exists())
 
+    def test_invalid_writes_use_field_error_objects(self):
+        response = self.create(first_name='')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('first_name', response.json())
+        self.assertIsInstance(response.json()['first_name'], list)
+        patient = self.create().json()
+        response = self.client.patch(f"/api/v1/patients/{patient['id']}/",
+                                     {'phone': 'invalido'}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('phone', response.json())
+
     def test_invalid_values_reject_atomically(self):
         cases = {'first_name': ['', '  ', None, 12, True, [], {}, 'a' * 101],
                  'last_name': [' ', 'a' * 151],

@@ -31,15 +31,20 @@ def login_view(request):
     try:
         payload = json.loads(request.body)
     except (ValueError, UnicodeDecodeError):
-        return JsonResponse({'detail': 'JSON inválido.'}, status=400)
-    if not isinstance(payload, dict) or any(
-        not isinstance(payload.get(field), str) or not payload[field]
-        for field in ('username', 'password')
-    ):
-        return JsonResponse({'detail': 'username y password son obligatorios.'}, status=400)
+        return JsonResponse({'non_field_errors': ['JSON inválido.']}, status=400)
+    if not isinstance(payload, dict):
+        return JsonResponse({'non_field_errors': ['Completa este campo.']}, status=400)
+    errors = {}
+    for field, message in (('username', 'Escribe tu usuario.'),
+                           ('password', 'Escribe tu contraseña.')):
+        value = payload.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors[field] = [message]
+    if errors:
+        return JsonResponse(errors, status=400)
     user = authenticate(request, username=payload['username'], password=payload['password'])
     if user is None:
-        return JsonResponse({'detail': 'Credenciales inválidas.'}, status=401)
+        return JsonResponse({'non_field_errors': ['Usuario o contraseña incorrectos.']}, status=400)
     login(request, user)
     return JsonResponse({'user': user_payload(user), 'csrfToken': get_token(request)})
 
