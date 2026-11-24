@@ -63,7 +63,7 @@ test('formulario S2 muestra en pantalla la validación real del servidor', async
   await page.getByRole('button', { name: 'Guardar paciente' }).click();
   await page.getByRole('button', { name: 'Abrir seguimiento nutricional' }).click();
   await page.getByRole('button', { name: 'Consultas' }).click();
-  await page.getByLabel('Fecha con zona horaria').fill('2026-10-01T10:00');
+  await page.getByLabel('Fecha y hora de la consulta').fill('2026-10-01T10:00');
   await page.getByRole('button', { name: 'Guardar consulta' }).click();
   await expect(page.getByRole('button', { name: 'Mediciones' })).toBeVisible();
   await page.getByRole('button', { name: 'Mediciones' }).click();
@@ -73,12 +73,18 @@ test('formulario S2 muestra en pantalla la validación real del servidor', async
   await expect(page.getByRole('button', { name: 'Mediciones' })).toBeVisible();
   await page.getByRole('button', { name: 'Mediciones' }).click();
   await page.getByLabel('Consulta').selectOption({ index: 0 });
-  await page.getByLabel('Peso en kilogramos').fill('71');
-  const duplicate = page.waitForResponse(response => response.url().includes('/measurements/') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Guardar medición' }).click();
-  expect((await duplicate).status()).toBe(400);
-  await expect(page.getByRole('alert')).toBeVisible();
-  await expect(page.getByRole('alert')).toContainText(/measurement|medición|unique|consulta/i);
+  // H-07: la interfaz previene la segunda medición antes de enviarla.
+  await expect(page.getByText('Esta consulta ya tiene una medición.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Guardar medición' })).toBeDisabled();
+  // F-2: el servidor sigue rechazando el duplicado con el mensaje del contrato.
+  const consultationId = await page.getByLabel('Consulta').inputValue();
+  const { csrfToken } = await (await page.request.get('/api/v1/auth/csrf/')).json();
+  const duplicate = await page.request.post(`/api/v1/consultations/${consultationId}/measurements/`, {
+    headers: { 'X-CSRFToken': csrfToken },
+    data: { weight_kg: '71' },
+  });
+  expect(duplicate.status()).toBe(400);
+  expect(JSON.stringify(await duplicate.json())).toContain('Esta consulta ya tiene una medición.');
 });
 
 test('regresión S1 con datos S2: edición persiste y logout', async ({ page }) => {
