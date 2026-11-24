@@ -19,8 +19,9 @@ class FollowupModelContractTests(SimpleTestCase):
     def test_weight_precision_range_and_finite_values(self):
         field = Measurement._meta.get_field('weight_kg')
         self.assertEqual(field.clean('70.00', None), Decimal('70.00'))
-        self.assertEqual(field.clean('9999.99', None), Decimal('9999.99'))
-        for value in ('0', '-1', '10000', '70.001', 'NaN', 'Infinity', None, True):
+        self.assertEqual(field.clean('400.00', None), Decimal('400.00'))
+        self.assertEqual(field.clean('1.00', None), Decimal('1.00'))
+        for value in ('0', '-1', '400.01', '1000', '70.001', 'NaN', 'Infinity', None, True):
             with self.subTest(value=value), self.assertRaises(ValidationError):
                 field.clean(value, None)
 

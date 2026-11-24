@@ -1,13 +1,17 @@
 from datetime import timedelta
 from decimal import Decimal
+import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory, force_authenticate
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError
 
 from patients.models import Patient
 from .models import AuditEvent, ManualNote
@@ -51,6 +55,64 @@ class FollowupApiTests(TestCase):
         self.assertEqual(self.client.get(f'/api/v1/patients/{self.other_patient.id}/history/').status_code, 404)
         self.assertEqual(self.client.post(f'/api/v1/patients/{self.other_patient.id}/consultations/', {'occurred_at': (timezone.now() - timedelta(days=1)).isoformat()}, format='json').status_code, 404)
 
+    def test_second_account_cannot_read_or_write_first_accounts_records(self):
+        consultation = self.consultation()
+        measurement_url = f"/api/v1/consultations/{consultation['id']}/measurements/"
+        measurement = self.client.post(
+            measurement_url, {'weight_kg': '68.5'}, format='json').json()
+        note_url = f"/api/v1/consultations/{consultation['id']}/notes/"
+        note = self.client.post(note_url, {
+            'kind': 'note', 'text': 'Nota ficticia de aislamiento'}, format='json').json()
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            document_url = f'/api/v1/patients/{self.patient.id}/documents/'
+            uploaded = SimpleUploadedFile(
+                'ficticio.png', b'\x89PNG\r\n\x1a\ncontenido ficticio', content_type='image/png')
+            response = self.client.post(document_url, {'file': uploaded}, format='multipart')
+            self.assertEqual(response.status_code, 201)
+            document_id = response.json()['id']
+            document = self.client.get(document_url).json()[0]
+            self.assertEqual(document['content_type'], 'image/png')
+            self.assertIs(type(document['size_bytes']), int)
+            self.assertGreater(document['size_bytes'], 0)
+
+            self.client.force_authenticate(self.other)
+            patient_url = f'/api/v1/patients/{self.patient.id}/'
+            self.assertEqual(self.client.get('/api/v1/patients/').json()['count'], 1)
+            self.assertEqual(self.client.get('/api/v1/patients/?search=Ana').json()['count'], 0)
+            self.assertEqual(self.client.get(patient_url).status_code, 404)
+            self.assertEqual(self.client.patch(patient_url, {'first_name': 'Ajena'},
+                                               format='json').status_code, 404)
+            self.assertEqual(self.client.get(
+                f'/api/v1/patients/{self.patient.id}/consultations/').status_code, 404)
+            self.assertEqual(self.client.post(
+                f'/api/v1/patients/{self.patient.id}/consultations/',
+                {'occurred_at': (timezone.now() - timedelta(days=1)).isoformat()},
+                format='json').status_code, 404)
+            self.assertEqual(self.client.get(
+                f'/api/v1/patients/{self.patient.id}/history/').status_code, 404)
+            self.assertEqual(self.client.get(
+                f'/api/v1/patients/{self.patient.id}/summary/').status_code, 404)
+            self.assertEqual(self.client.get(document_url).status_code, 404)
+            self.assertEqual(self.client.post(document_url, {
+                'file': SimpleUploadedFile('otro.png', b'\x89PNG\r\n\x1a\n',
+                                           content_type='image/png')},
+                format='multipart').status_code, 404)
+            self.assertEqual(self.client.get(measurement_url).status_code, 404)
+            self.assertEqual(self.client.post(measurement_url, {'weight_kg': '70'},
+                                              format='json').status_code, 404)
+            self.assertEqual(self.client.get(
+                f"/api/v1/consultations/{consultation['id']}/").status_code, 404)
+            self.assertEqual(self.client.get(
+                f"/api/v1/measurements/{measurement['id']}/").status_code, 404)
+            self.assertEqual(self.client.get(note_url).status_code, 404)
+            self.assertEqual(self.client.post(note_url, {
+                'kind': 'note', 'text': 'Intento de acceso'}, format='json').status_code, 404)
+            self.assertEqual(self.client.get(
+                f"/api/v1/notes/{note['id']}/").status_code, 404)
+            self.assertEqual(self.client.get(
+                f'/api/v1/documents/{document_id}/download/').status_code, 404)
+
     def test_strict_input_pagination_and_details(self):
         endpoint = f'/api/v1/patients/{self.patient.id}/consultations/'
         self.assertEqual(self.client.post(endpoint, {'occurred_at': '2026-01-01T10:00:00'}, format='json').status_code, 400)
@@ -70,6 +132,66 @@ class FollowupApiTests(TestCase):
         self.assertEqual(self.client.get(history + '?page_size=-1').status_code, 400)
         self.assertEqual(self.client.post(endpoint, {'occurred_at': '2026-01-01T00:00:00Z'}, format='multipart').status_code, 415)
         self.assertEqual(self.client.post(f"/api/v1/consultations/{item['id']}/measurements/", {'weight_kg': '7e1'}, format='json').status_code, 400)
+
+    def test_invalid_writes_return_field_error_objects(self):
+        consultations = f'/api/v1/patients/{self.patient.id}/consultations/'
+        invalid_consultation = self.client.post(consultations, {'occurred_at': 'sin-fecha'}, format='json')
+        self.assertEqual(invalid_consultation.status_code, 400)
+        self.assertIn('occurred_at', invalid_consultation.json())
+
+        consultation = self.consultation()
+        measurement_url = f"/api/v1/consultations/{consultation['id']}/measurements/"
+        invalid_weight = self.client.post(measurement_url, {'weight_kg': 'abc'}, format='json')
+        self.assertEqual(invalid_weight.status_code, 400)
+        self.assertEqual(invalid_weight.json(), {
+            'weight_kg': ['Escribe el peso con números, por ejemplo 68.5.']})
+        self.assertEqual(self.client.post(measurement_url, {'weight_kg': '70'}, format='json').status_code, 201)
+        duplicate = self.client.post(measurement_url, {'weight_kg': '71'}, format='json')
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertEqual(duplicate.json(), {
+            'non_field_errors': ['Esta consulta ya tiene una medición.']})
+
+        notes_url = f"/api/v1/consultations/{consultation['id']}/notes/"
+        invalid_note = self.client.post(notes_url, {'kind': 'desconocido', 'text': 'x'}, format='json')
+        self.assertEqual(invalid_note.status_code, 400)
+        self.assertIn('kind', invalid_note.json())
+
+        documents_url = f'/api/v1/patients/{self.patient.id}/documents/'
+        invalid_document = self.client.post(documents_url, {
+            'file': SimpleUploadedFile('nota.txt', b'texto', content_type='text/plain')})
+        self.assertEqual(invalid_document.status_code, 400)
+        self.assertEqual(invalid_document.json(), {
+            'file': ['Sube un archivo PDF, PNG o JPG.']})
+
+    def test_weight_range_rejects_invalid_values_and_accepts_boundaries(self):
+        for value in ('1000', '0', '-5', '400.01'):
+            consultation = self.consultation()
+            response = self.client.post(
+                f"/api/v1/consultations/{consultation['id']}/measurements/",
+                {'weight_kg': value}, format='json')
+            with self.subTest(value=value):
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.json(), {
+                    'weight_kg': ['El peso debe estar entre 1 y 400 kg.']})
+
+        for value in ('68.5', '1', '400'):
+            consultation = self.consultation()
+            response = self.client.post(
+                f"/api/v1/consultations/{consultation['id']}/measurements/",
+                {'weight_kg': value}, format='json')
+            with self.subTest(value=value):
+                self.assertEqual(response.status_code, 201)
+
+    def test_weight_constraint_integrity_error_is_not_reported_as_duplicate(self):
+        consultation = self.consultation()
+        with patch('followup.views.MeasurementSerializer.save',
+                   side_effect=IntegrityError('CHECK constraint failed: followup_weight_valid_range')):
+            response = self.client.post(
+                f"/api/v1/consultations/{consultation['id']}/measurements/",
+                {'weight_kg': '70'}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {
+            'weight_kg': ['El peso debe estar entre 1 y 400 kg.']})
 
     def test_missing_weight_is_not_skipped(self):
         first = self.consultation(days=3)
