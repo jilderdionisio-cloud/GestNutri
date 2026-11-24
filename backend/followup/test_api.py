@@ -102,6 +102,25 @@ class FollowupApiTests(TestCase):
         self.assertEqual(invalid_document.json(), {
             'file': ['Sube un archivo PDF, PNG o JPG.']})
 
+    def test_weight_range_rejects_invalid_values_and_accepts_boundaries(self):
+        for value in ('1000', '0', '-5', '400.01'):
+            consultation = self.consultation()
+            response = self.client.post(
+                f"/api/v1/consultations/{consultation['id']}/measurements/",
+                {'weight_kg': value}, format='json')
+            with self.subTest(value=value):
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.json(), {
+                    'weight_kg': ['El peso debe estar entre 1 y 400 kg.']})
+
+        for value in ('68.5', '1', '400'):
+            consultation = self.consultation()
+            response = self.client.post(
+                f"/api/v1/consultations/{consultation['id']}/measurements/",
+                {'weight_kg': value}, format='json')
+            with self.subTest(value=value):
+                self.assertEqual(response.status_code, 201)
+
     def test_missing_weight_is_not_skipped(self):
         first = self.consultation(days=3)
         middle = self.consultation(days=2)

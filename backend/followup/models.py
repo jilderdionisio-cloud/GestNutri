@@ -22,8 +22,8 @@ def validate_occurred_at(value):
 
 
 def validate_weight(value):
-    if not value.is_finite() or not Decimal('0') < value <= Decimal('9999.99'):
-        raise ValidationError('El peso debe ser finito, positivo y no mayor que 9999.99 kg.')
+    if not value.is_finite() or not Decimal('1') <= value <= Decimal('400'):
+        raise ValidationError('El peso debe estar entre 1 y 400 kg.')
 
 
 class Consultation(models.Model):
@@ -50,7 +50,7 @@ class Measurement(models.Model):
     class Meta:
         ordering = ['created_at', 'id']
         constraints = [models.CheckConstraint(
-            condition=models.Q(weight_kg__gt=0, weight_kg__lte=Decimal('9999.99')),
+            condition=models.Q(weight_kg__gte=Decimal('1'), weight_kg__lte=Decimal('400')),
             name='followup_weight_valid_range')]
 
 
