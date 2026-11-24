@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { client, apiMode } from './data-client.js';
 import { emptyPatient, fields, patientName, validate, whatsappUrl, formatBirthDate, pluralPacientes } from './patients.js';
 import Followup from './Followup.jsx';
-import { messages } from './messages-temporal.js';
+import { messages } from './messages.js';
 import logo from './assets/harabatash-logo.png';
 import symbol from './assets/harabatash-symbol.png';
 import './styles.css';
