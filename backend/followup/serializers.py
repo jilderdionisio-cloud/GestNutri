@@ -34,9 +34,9 @@ class MeasurementSerializer(serializers.ModelSerializer):
             extra = set(data) - {'weight_kg'}
             if extra: raise serializers.ValidationError({key: ['Campo desconocido.'] for key in extra})
             if not isinstance(data.get('weight_kg'), str):
-                raise serializers.ValidationError({'weight_kg': ['Usa una cadena decimal exacta.']})
+                raise serializers.ValidationError({'weight_kg': ['Escribe el peso con números, por ejemplo 68.5.']})
             if not re.fullmatch(r'[0-9]+(?:\.[0-9]{1,2})?', data['weight_kg']):
-                raise serializers.ValidationError({'weight_kg': ['Formato decimal inválido.']})
+                raise serializers.ValidationError({'weight_kg': ['Escribe el peso con números, por ejemplo 68.5.']})
         return super().to_internal_value(data)
 
 
