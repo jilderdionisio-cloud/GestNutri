@@ -50,8 +50,8 @@ test('recorrido API real y aislamiento entre dos propietarios', async ({ page })
   await page.getByRole('button', { name: 'Consultas' }).click();
   const consultationCreated = page.waitForResponse(response =>
     response.url().includes(`/api/v1/patients/${savedPatient.id}/consultations/`) && response.request().method() === 'POST');
-  await page.getByLabel('Fecha con zona horaria').fill('2026-10-01T10:00');
-  await page.locator('form').filter({ has: page.getByLabel('Fecha con zona horaria') }).getByRole('button', { name: 'Guardar consulta' }).click();
+  await page.getByLabel('Fecha y hora de la consulta').fill('2026-10-01T10:00');
+  await page.locator('form').filter({ has: page.getByLabel('Fecha y hora de la consulta') }).getByRole('button', { name: 'Guardar consulta' }).click();
   const consultationResponse = await consultationCreated;
   expect(consultationResponse.status()).toBe(201);
   const consultation = await consultationResponse.json();
@@ -82,7 +82,7 @@ test('recorrido API real y aislamiento entre dos propietarios', async ({ page })
   await expect(page.getByText('Primera consulta', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Resumen' }).click();
-  await expect(page.getByText('70 kg')).toBeVisible();
+  await expect(page.getByRole('article').filter({ hasText: 'Última consulta' }).getByText('70 kg')).toBeVisible();
 
   await page.getByRole('button', { name: 'Documentos' }).click();
   await page.getByLabel('Consulta').selectOption(consultation.id);
