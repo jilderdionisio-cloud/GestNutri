@@ -19,9 +19,11 @@ function WhatsAppIcon() {
 }
 
 function SiteHeader({ session, busy, onLogout }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false); const headerRef = useRef(null); const toggleRef = useRef(null);
+  useEffect(() => { if (!menuOpen) return undefined; const onKey = event => { if (event.key === 'Escape') { setMenuOpen(false); toggleRef.current?.focus(); } }; const onPointer = event => { if (!headerRef.current?.contains(event.target)) setMenuOpen(false); }; document.addEventListener('keydown', onKey); document.addEventListener('pointerdown', onPointer); return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onPointer); }; }, [menuOpen]);
+  const closeOnFocusOut = event => { if (menuOpen && event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false); };
   const links = session ? [{ href: '#pacientes', label: 'Pacientes' }] : [{ href: '#inicio', label: 'Inicio' }, { href: '#herramienta', label: 'Herramienta' }, { href: '#seguimiento', label: 'Seguimiento' }, { href: '#acceso', label: 'Acceso' }];
-  return <header className="site-header"><Brand compact /><button className="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><span /><span /><span /></button><nav className={`site-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegación principal">{links.map(link => <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>{link.label}</a>)}{session && <button type="button" className="button button--quiet" disabled={busy} onClick={onLogout}>Salir</button>}</nav></header>;
+  return <header className="site-header" ref={headerRef} onBlur={closeOnFocusOut}><Brand compact /><button ref={toggleRef} className="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><span /><span /><span /></button><nav className={`site-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegación principal">{links.map(link => <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>{link.label}</a>)}{session && <button type="button" className="button button--quiet" disabled={busy} onClick={onLogout}>Salir</button>}</nav></header>;
 }
 
 function AccessForm({ credentials, setCredentials, busy, restoring, onSubmit, usesApi, message, errors, onEdit }) {
