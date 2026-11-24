@@ -1,5 +1,15 @@
 # Diccionario de Paciente — Sprint 1
 
+## Acuerdo de revisión 03: mediciones (D-1)
+
+`weight_kg`: peso en kilogramos, de 1 a 400 inclusive, hasta dos decimales.
+El separador canónico es punto; el cliente acepta coma y la convierte a punto.
+Una consulta admite como máximo una medición. No se redondea una entrada inválida.
+Constantes compartidas: `frontend/src/messages.js`.
+Este acuerdo sustituye el rango técnico anterior para la revisión 03; su aplicación
+en API, modelo y migración corresponde al PR de Fernanda. Este documento no acredita
+que esa restricción ya esté desplegada ni representa una recomendación clínica.
+
 Responsable: Diana (`dianabojorquezcetina-max`). Referencias: Issues #2 y #3.
 
 **Estado: propuesta v1 para revisión de Fernanda y del orquestador; no es un contrato aprobado ni una implementación.** Los nombres siguientes son la única propuesta canónica para API y modelo. No hay alias. Véanse [contrato](CONTRATO_PACIENTE_S1.md) y [ERD](ERD_S1.md).
