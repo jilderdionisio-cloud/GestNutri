@@ -27,7 +27,7 @@ describe('seguimiento conectado a API', () => {
     expect(await screen.findByRole('heading', { name: 'Este paciente aún no tiene consultas' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Crear primera consulta' }));
     expect(screen.getByRole('heading', { name: 'Consultas', exact: true })).toBeTruthy();
-    expect(screen.getByLabelText('Fecha con zona horaria')).toBeTruthy();
+    expect(screen.getByLabelText('Fecha y hora de la consulta')).toBeTruthy();
   });
 
   it('presenta historial, resumen y evolución con etiquetas legibles', async () => {
@@ -56,7 +56,7 @@ describe('seguimiento conectado a API', () => {
     const user = userEvent.setup(); const created = { id: 'consultation-new', occurred_at: '2026-10-02T12:00:00Z' };
     api.createConsultation.mockResolvedValue(created); render(<Followup patient={patient} onBack={() => {}} />);
     await user.click(screen.getByRole('button', { name: 'Consultas', exact: true }));
-    fireEvent.change(screen.getByLabelText('Fecha con zona horaria'), { target: { value: '2026-10-02T06:00' } });
+    fireEvent.change(screen.getByLabelText('Fecha y hora de la consulta'), { target: { value: '2026-10-02T06:00' } });
     await user.click(screen.getByRole('button', { name: 'Guardar consulta' }));
     await waitFor(() => expect(api.createConsultation).toHaveBeenCalledOnce());
     expect(await screen.findByText('Registro guardado correctamente.')).toBeTruthy();
