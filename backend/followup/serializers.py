@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from collections.abc import Mapping
+from decimal import Decimal
 from django.utils import timezone
 import re
 from .models import Consultation, Measurement, ManualNote
@@ -14,6 +15,7 @@ class ConsultationSerializer(serializers.ModelSerializer):
             if not isinstance(raw, str) or not re.search(r'(Z|[+-][0-9]{2}:[0-9]{2})$', raw):
                 raise serializers.ValidationError({'occurred_at': ['La fecha debe incluir zona horaria.']})
         return super().to_internal_value(data)
+
     def validate_occurred_at(self, value):
         if timezone.is_naive(value): raise serializers.ValidationError('La fecha debe incluir zona horaria.')
         return value
@@ -35,9 +37,14 @@ class MeasurementSerializer(serializers.ModelSerializer):
             if extra: raise serializers.ValidationError({key: ['Campo desconocido.'] for key in extra})
             if not isinstance(data.get('weight_kg'), str):
                 raise serializers.ValidationError({'weight_kg': ['Escribe el peso con números, por ejemplo 68.5.']})
-            if not re.fullmatch(r'[0-9]+(?:\.[0-9]{1,2})?', data['weight_kg']):
+            if not re.fullmatch(r'-?[0-9]+(?:\.[0-9]{1,2})?', data['weight_kg']):
                 raise serializers.ValidationError({'weight_kg': ['Escribe el peso con números, por ejemplo 68.5.']})
         return super().to_internal_value(data)
+
+    def validate_weight_kg(self, value):
+        if not Decimal('1') <= value <= Decimal('400'):
+            raise serializers.ValidationError('El peso debe estar entre 1 y 400 kg.')
+        return value
 
 
 class ManualNoteSerializer(serializers.ModelSerializer):
