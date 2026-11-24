@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { patientName, formatFileType, formatFileSize } from './patients.js';
 import { followupSections, previewStates } from './followup-model.js';
 import { apiMode, client } from './data-client.js';
-import { messages } from './messages-temporal.js';
+import { messages } from './messages.js';
 
 const noteKinds = { note: 'Nota', preference: 'Preferencia', restriction: 'Restricción' };
 const evolutionCopy = { first: 'Esta es la primera consulta registrada; todavía no hay una consulta anterior para comparar.', insufficient_data: 'Falta una medición en esta consulta o en la anterior para mostrar una comparación.', increase: 'El registro actual es mayor que el de la consulta anterior.', decrease: 'El registro actual es menor que el de la consulta anterior.', equal: 'El registro actual coincide con el de la consulta anterior.', invalid_data: 'No es posible comparar este registro por datos no válidos.' };
