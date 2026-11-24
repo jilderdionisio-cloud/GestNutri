@@ -55,7 +55,10 @@ class AuthenticationTests(TestCase):
     def test_inactive_user_cannot_login(self):
         self.user.is_active = False
         self.user.save()
-        self.assertEqual(self.login().status_code, 400)
+        response = self.login()
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {
+            'non_field_errors': ['Usuario o contraseña incorrectos.']})
 
     def test_invalid_payloads(self):
         response = self.client.post('/api/v1/auth/login/',
