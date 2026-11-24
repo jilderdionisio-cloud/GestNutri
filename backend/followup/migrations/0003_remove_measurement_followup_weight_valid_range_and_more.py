@@ -4,6 +4,23 @@ from decimal import Decimal
 from django.db import migrations, models
 
 
+def validate_existing_weights(apps, schema_editor):
+    Measurement = apps.get_model('followup', 'Measurement')
+    invalid = Measurement.objects.filter(
+        models.Q(weight_kg__lt=Decimal('1')) |
+        models.Q(weight_kg__gt=Decimal('400'))
+    )
+    count = invalid.count()
+    if count:
+        sample_ids = ', '.join(str(value) for value in
+                               invalid.order_by('pk').values_list('pk', flat=True)[:5])
+        raise RuntimeError(
+            f'No se aplica esta migración: hay {count} mediciones fuera del rango '
+            f'1-400 kg. Corrige esos registros y vuelve a ejecutar '
+            f"'python manage.py migrate'. IDs de ejemplo: {sample_ids}."
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,6 +28,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(validate_existing_weights, migrations.RunPython.noop),
         migrations.RemoveConstraint(
             model_name='measurement',
             name='followup_weight_valid_range',
