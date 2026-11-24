@@ -1,10 +1,12 @@
 from datetime import timedelta
 from decimal import Decimal
+import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory, force_authenticate
@@ -52,6 +54,64 @@ class FollowupApiTests(TestCase):
         self.assertEqual(self.client.post(f"/api/v1/consultations/{mine['id']}/measurements/", {'weight_kg': '71.00'}, format='json').status_code, 400)
         self.assertEqual(self.client.get(f'/api/v1/patients/{self.other_patient.id}/history/').status_code, 404)
         self.assertEqual(self.client.post(f'/api/v1/patients/{self.other_patient.id}/consultations/', {'occurred_at': (timezone.now() - timedelta(days=1)).isoformat()}, format='json').status_code, 404)
+
+    def test_second_account_cannot_read_or_write_first_accounts_records(self):
+        consultation = self.consultation()
+        measurement_url = f"/api/v1/consultations/{consultation['id']}/measurements/"
+        measurement = self.client.post(
+            measurement_url, {'weight_kg': '68.5'}, format='json').json()
+        note_url = f"/api/v1/consultations/{consultation['id']}/notes/"
+        note = self.client.post(note_url, {
+            'kind': 'note', 'text': 'Nota ficticia de aislamiento'}, format='json').json()
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            document_url = f'/api/v1/patients/{self.patient.id}/documents/'
+            uploaded = SimpleUploadedFile(
+                'ficticio.png', b'\x89PNG\r\n\x1a\ncontenido ficticio', content_type='image/png')
+            response = self.client.post(document_url, {'file': uploaded}, format='multipart')
+            self.assertEqual(response.status_code, 201)
+            document_id = response.json()['id']
+            document = self.client.get(document_url).json()[0]
+            self.assertEqual(document['content_type'], 'image/png')
+            self.assertIs(type(document['size_bytes']), int)
+            self.assertGreater(document['size_bytes'], 0)
+
+            self.client.force_authenticate(self.other)
+            patient_url = f'/api/v1/patients/{self.patient.id}/'
+            self.assertEqual(self.client.get('/api/v1/patients/').json()['count'], 1)
+            self.assertEqual(self.client.get('/api/v1/patients/?search=Ana').json()['count'], 0)
+            self.assertEqual(self.client.get(patient_url).status_code, 404)
+            self.assertEqual(self.client.patch(patient_url, {'first_name': 'Ajena'},
+                                               format='json').status_code, 404)
+            self.assertEqual(self.client.get(
+                f'/api/v1/patients/{self.patient.id}/consultations/').status_code, 404)
+            self.assertEqual(self.client.post(
+                f'/api/v1/patients/{self.patient.id}/consultations/',
+                {'occurred_at': (timezone.now() - timedelta(days=1)).isoformat()},
+                format='json').status_code, 404)
+            self.assertEqual(self.client.get(
+                f'/api/v1/patients/{self.patient.id}/history/').status_code, 404)
+            self.assertEqual(self.client.get(
+                f'/api/v1/patients/{self.patient.id}/summary/').status_code, 404)
+            self.assertEqual(self.client.get(document_url).status_code, 404)
+            self.assertEqual(self.client.post(document_url, {
+                'file': SimpleUploadedFile('otro.png', b'\x89PNG\r\n\x1a\n',
+                                           content_type='image/png')},
+                format='multipart').status_code, 404)
+            self.assertEqual(self.client.get(measurement_url).status_code, 404)
+            self.assertEqual(self.client.post(measurement_url, {'weight_kg': '70'},
+                                              format='json').status_code, 404)
+            self.assertEqual(self.client.get(
+                f"/api/v1/consultations/{consultation['id']}/").status_code, 404)
+            self.assertEqual(self.client.get(
+                f"/api/v1/measurements/{measurement['id']}/").status_code, 404)
+            self.assertEqual(self.client.get(note_url).status_code, 404)
+            self.assertEqual(self.client.post(note_url, {
+                'kind': 'note', 'text': 'Intento de acceso'}, format='json').status_code, 404)
+            self.assertEqual(self.client.get(
+                f"/api/v1/notes/{note['id']}/").status_code, 404)
+            self.assertEqual(self.client.get(
+                f'/api/v1/documents/{document_id}/download/').status_code, 404)
 
     def test_strict_input_pagination_and_details(self):
         endpoint = f'/api/v1/patients/{self.patient.id}/consultations/'
