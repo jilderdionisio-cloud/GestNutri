@@ -9,6 +9,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory, force_authenticate
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError
 
 from patients.models import Patient
 from .models import AuditEvent, ManualNote
@@ -120,6 +121,17 @@ class FollowupApiTests(TestCase):
                 {'weight_kg': value}, format='json')
             with self.subTest(value=value):
                 self.assertEqual(response.status_code, 201)
+
+    def test_weight_constraint_integrity_error_is_not_reported_as_duplicate(self):
+        consultation = self.consultation()
+        with patch('followup.views.MeasurementSerializer.save',
+                   side_effect=IntegrityError('CHECK constraint failed: followup_weight_valid_range')):
+            response = self.client.post(
+                f"/api/v1/consultations/{consultation['id']}/measurements/",
+                {'weight_kg': '70'}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {
+            'weight_kg': ['El peso debe estar entre 1 y 400 kg.']})
 
     def test_missing_weight_is_not_skipped(self):
         first = self.consultation(days=3)
